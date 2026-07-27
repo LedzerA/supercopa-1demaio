@@ -28,8 +28,6 @@ export function App() {
   const hash = useHash();
   const rota = partes(hash)[0] ?? "";
 
-  if (!autenticado) return <Entrar />;
-
   return (
     <>
       <header className="topo">
@@ -37,13 +35,32 @@ export function App() {
           <h1>
             {COPA.nome} {COPA.edicao}
           </h1>
-          <div className="sub">Administração · {COPA.liga}</div>
+          <div className="sub">
+            {isAdmin ? "Administração · " : ""}
+            {COPA.liga}
+          </div>
         </div>
         <div className="direita">
-          <span className="quem">{email}</span>
-          <button className="discreto" style={{ color: "#fdfaf4" }} onClick={sair}>
-            Sair
-          </button>
+          {autenticado ? (
+            <>
+              <span className="quem">{email}</span>
+              <button
+                className="discreto"
+                style={{ color: "#fdfaf4" }}
+                onClick={sair}
+              >
+                Sair
+              </button>
+            </>
+          ) : (
+            <button
+              className="discreto"
+              style={{ color: "#fdfaf4" }}
+              onClick={() => irPara("#/entrar")}
+            >
+              Entrar
+            </button>
+          )}
         </div>
       </header>
 
@@ -60,18 +77,22 @@ export function App() {
       </nav>
 
       <main>
-        {!isAdmin && (
+        {/* Visitante sem login não vê aviso nenhum: navegar sem conta é
+            o uso normal do site. O aviso só faz sentido para quem
+            entrou e mesmo assim não pode escrever. */}
+        {autenticado && !isAdmin && (
           <Aviso>
             <strong>Você está em modo leitura.</strong> Sua conta não está na
             lista de administradores <em>desta</em> competição. Ser admin do
             statsproleta não dá acesso aqui — os ambientes são separados. Para
-            liberar, rode o <code>insert into copa_admins</code> descrito no
-            final de <code>supabase/schema.sql</code>.
+            liberar, rode <code>supabase/admins.sql</code> com este e-mail.
           </Aviso>
         )}
         {erro && <Aviso erro>{erro}</Aviso>}
         {carregando ? (
           <p className="vazio">Carregando…</p>
+        ) : rota === "entrar" ? (
+          <Entrar />
         ) : (
           <Conteudo rota={rota} />
         )}

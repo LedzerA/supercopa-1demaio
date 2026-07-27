@@ -1,14 +1,20 @@
-import { useState } from "react";
-import { COPA } from "../config";
+import { useEffect, useState } from "react";
 import { useStore } from "../state/store";
+import { irPara } from "../lib/router";
 import { Aviso, Cartao } from "../components/ui";
 
 export function Entrar() {
-  const { entrar } = useStore();
+  const { entrar, autenticado, isAdmin } = useStore();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  // Entrou: volta para o painel. O site em si é público — esta tela
+  // só existe para quem vai gerenciar.
+  useEffect(() => {
+    if (autenticado) irPara("#/");
+  }, [autenticado]);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -19,13 +25,25 @@ export function Entrar() {
     setEnviando(false);
   }
 
+  if (autenticado) {
+    return (
+      <div className="entrar">
+        <Cartao>
+          <p className="dica" style={{ margin: 0 }}>
+            {isAdmin
+              ? "Você já está logado como administrador."
+              : "Você já está logado, mas esta conta não administra a Copa."}
+          </p>
+        </Cartao>
+      </div>
+    );
+  }
+
   return (
     <div className="entrar">
       <div className="marca">
-        <h1>
-          {COPA.nome} {COPA.edicao}
-        </h1>
-        <p>Área de administração · {COPA.liga}</p>
+        <h1>Entrar</h1>
+        <p>Só para quem administra a competição</p>
       </div>
       <Cartao>
         <form className="pilha" onSubmit={enviar}>
@@ -55,9 +73,19 @@ export function Entrar() {
           </button>
         </form>
         <p className="dica" style={{ marginTop: "0.8rem" }}>
-          O acesso é liberado pela Comissão Organizadora, na tabela{" "}
-          <code>copa_admins</code>. É uma lista própria da SuperCopa — separada
-          da do app do Proleta.
+          Para acompanhar a competição você <strong>não precisa de conta</strong> —
+          é só{" "}
+          <a
+            href="#/"
+            onClick={(e) => {
+              e.preventDefault();
+              irPara("#/");
+            }}
+          >
+            voltar
+          </a>
+          . O login serve para lançar resultados, e é liberado pela Comissão
+          Organizadora.
         </p>
       </Cartao>
     </div>

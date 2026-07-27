@@ -10,6 +10,34 @@ import { Cartao, Vazio, nomeCurto } from "../components/ui";
 import type { TipoCartao } from "../lib/types";
 
 export function Disciplina() {
+  const { isAdmin } = useStore();
+
+  // Sem login, `cartoes` volta vazia por causa do RLS. Mostrar as
+  // tabelas vazias diria "não há ocorrências", o que é diferente de
+  // "você não pode ver as ocorrências".
+  if (!isAdmin) {
+    return (
+      <>
+        <Cartao titulo="Registro disciplinar restrito">
+          <p className="dica" style={{ marginTop: 0 }}>
+            Cartões, suspensões e relatos de súmula só aparecem para a
+            Comissão Organizadora. Uma súmula pode nomear alguém acusado de
+            agressão (Art. 29) ou de ofensa racista, machista, xenofóbica,
+            homofóbica, lesbofóbica ou transfóbica (Art. 33) — é material de
+            deliberação da Comissão, não de publicação.
+          </p>
+          <p className="dica">
+            O que é público: a <strong>quantidade</strong> de cartões vermelhos
+            por equipe, que aparece na coluna <strong>CV</strong> da
+            classificação, em <em>Regionais</em>. É o 4º critério de desempate
+            do Art. 9º, então precisa estar à vista de todos.
+          </p>
+        </Cartao>
+        <Ajustes />
+      </>
+    );
+  }
+
   return (
     <>
       <Registrar />
