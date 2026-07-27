@@ -10,39 +10,12 @@ abaixo.
 
 ---
 
-## 1. Placares que faltam — Regional Mateus Azevedo (Carrão) 🔴 prioridade
+## 1. Placares do Carrão — ✅ RESOLVIDO
 
-**É o buraco maior.** Da regional do Carrão temos só a classificação
-acumulada — não temos nenhum placar jogo a jogo das rodadas 1 a 4.
-São **12 jogos** sem resultado registrado.
-
-Precisamos dos 12 placares, com quem foi mandante:
-
-| Rodada | Jogo | Placar |
-|---|---|---|
-| 1ª | ? × ? | |
-| 1ª | ? × ? | |
-| 1ª | ? × ? | |
-| 2ª | ? × ? | |
-| 2ª | ? × ? | |
-| 2ª | ? × ? | |
-| 3ª | ? × ? | |
-| 3ª | ? × ? | |
-| 3ª | ? × ? | |
-| 4ª | ? × ? | |
-| 4ª | ? × ? | |
-| 4ª | ? × ? | |
-
-Times da regional: Código Verde, Proletariado Alviverde, TAP,
-Corote & Molotov, Rayo Proletário, Só de Virada.
-
-Por enquanto a campanha foi lançada em bloco (só o total de pontos,
-vitórias e gols de cada time), o que **funciona para a classificação
-mas não permite aplicar o confronto direto** — que é o primeiro
-critério de desempate do Art. 9º. Se dois times terminarem empatados
-em pontos, sem os placares individuais não dá para saber quem passa.
-
----
+Os 12 placares das rodadas 1 a 4 da Regional Mateus Azevedo foram
+recebidos e conferidos: os seis times batem exatamente com a
+classificação divulgada, em pontos, vitórias, empates, derrotas, gols
+pró e gols contra. Nada pendente aqui.
 
 ## 2. Confirmações de placares já lançados
 
@@ -105,6 +78,10 @@ por rodada?**
 - Proletariado Alviverde × Rayo Proletário
 - Só de Virada × Corote & Molotov
 - TAP × Código Verde
+
+*(A organização chamou essa rodada de "6ª". Num returno de 6 equipes são
+5 rodadas, então ela entrou no sistema como 5ª e última da fase
+regional. Se existe mesmo uma 6ª rodada, precisamos saber.)*
 
 ### Para todos os 16
 
@@ -206,12 +183,12 @@ grafia oficial:
 
 ## Resumo do que é mais urgente
 
-1. **Os 12 placares do Carrão** — sem eles o desempate por confronto
-   direto não funciona nessa regional.
-2. **Confirmar Formigueiro × BNH e o gol do Havana** — são divergências
-   entre a tabela e a lista de jogos.
-3. **As listas de atletas inscritos** — já deveriam estar fechadas pelo
-   Art. 13 §3º.
-4. **Datas e campos dos 16 jogos que faltam.**
+1. **Confirmar Formigueiro × BNH e o gol do Havana** — são divergências
+   entre a tabela e a lista de jogos (item 2).
+2. **As listas de atletas inscritos** — já deveriam estar fechadas pelo
+   Art. 13 §3º (item 4).
+3. **Datas e campos dos 16 jogos que faltam** (item 3).
+4. **Situação disciplinar até aqui** (item 5) — vermelhos são o 4º
+   critério de desempate.
 5. **A decisão da Comissão sobre "melhor campanha acumulada"** (item 8),
    antes das finais regionais.

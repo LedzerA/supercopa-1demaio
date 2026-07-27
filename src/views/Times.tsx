@@ -51,8 +51,10 @@ function BlocoTime({
   const {
     jogadores,
     cartoes,
+    contatos,
     isAdmin,
     salvarTime,
+    salvarContato,
     criarJogador,
     apagarJogador,
     toast,
@@ -62,6 +64,7 @@ function BlocoTime({
 
   const elenco = jogadores.filter((p) => p.time_id === time.id);
   const suspensos = pendenciasDoTime(cartoes, time.id);
+  const contato = contatos.find((c) => c.time_id === time.id)?.contato ?? "";
 
   async function adicionar() {
     if (!nome.trim()) return;
@@ -104,12 +107,12 @@ function BlocoTime({
                 />
               </label>
               <label className="campo" style={{ flex: 1, minWidth: "8rem" }}>
-                Contato
+                Contato <span style={{ textTransform: "none" }}>(só admins)</span>
                 <input
-                  defaultValue={time.contato ?? ""}
+                  defaultValue={contato}
                   onBlur={(e) =>
-                    e.target.value !== (time.contato ?? "") &&
-                    salvarTime(time.id, { contato: e.target.value || null })
+                    e.target.value !== contato &&
+                    salvarContato(time.id, e.target.value)
                   }
                 />
               </label>

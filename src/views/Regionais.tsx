@@ -25,7 +25,7 @@ export function Regionais() {
 }
 
 function BlocoRegional({ regional }: { regional: Regional }) {
-  const { times, jogos, cartoes, ajustes, isAdmin, salvarJogo, toast } = useStore();
+  const { times, jogos, vermelhos, ajustes, isAdmin, salvarJogo, toast } = useStore();
 
   const doGrupo = useMemo(
     () => times.filter((t) => t.regional_id === regional.id),
@@ -35,18 +35,14 @@ function BlocoRegional({ regional }: { regional: Regional }) {
     () => jogos.filter((j) => j.regional_id === regional.id),
     [jogos, regional.id]
   );
-  const cartoesDoGrupo = useMemo(
-    () => cartoes.filter((c) => doGrupo.some((t) => t.id === c.time_id)),
-    [cartoes, doGrupo]
-  );
   const ajustesDoGrupo = useMemo(
     () => ajustes.filter((a) => doGrupo.some((t) => t.id === a.time_id)),
     [ajustes, doGrupo]
   );
 
   const tabela = useMemo(
-    () => classificacao(doGrupo, jogosDoGrupo, cartoesDoGrupo, ajustesDoGrupo),
-    [doGrupo, jogosDoGrupo, cartoesDoGrupo, ajustesDoGrupo]
+    () => classificacao(doGrupo, jogosDoGrupo, vermelhos, ajustesDoGrupo),
+    [doGrupo, jogosDoGrupo, vermelhos, ajustesDoGrupo]
   );
 
   const daFaseRegional = jogosDoGrupo.filter((j) => j.fase === "regional");

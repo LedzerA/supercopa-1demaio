@@ -107,29 +107,41 @@ on conflict (id) do nothing;
 -- dos dois está certo.
 
 -- ============================================================
--- REGIONAL MATEUS AZEVEDO (Carrão)
--- O txt traz só a classificação acumulada das rodadas 1 a 4, sem os
--- placares jogo a jogo. Os 12 jogos entram como AJUSTE de campanha
--- (copa_ajustes) e a 5ª rodada entra como jogo normal.
--- Quando você tiver os placares, cadastre os 12 jogos no site e
--- APAGUE os ajustes abaixo — senão a campanha conta em dobro.
+-- REGIONAL MATEUS AZEVEDO (Carrão) — 15 jogos, 5 rodadas
+-- Placares das rodadas 1 a 4 informados pela organização.
+-- Conferidos contra a classificação divulgada: os 6 times batem
+-- em pontos, vitórias, empates, derrotas, gols pró e gols contra.
 -- ============================================================
 insert into public.copa_jogos
-  (id, regional_id, fase, rodada, ordem, mandante_id, visitante_id, status) values
-  ('j-car-5-1','r-carrao','regional',5,1,'t-proleta','t-rayo',           'agendado'),
-  ('j-car-5-2','r-carrao','regional',5,2,'t-sodevirada','t-corote',      'agendado'),
-  ('j-car-5-3','r-carrao','regional',5,3,'t-tap','t-codigoverde',        'agendado')
+  (id, regional_id, fase, rodada, ordem, mandante_id, visitante_id,
+   status, gols_mandante, gols_visitante) values
+  -- 1ª rodada
+  ('j-car-1-1','r-carrao','regional',1,1,'t-tap','t-corote',              'encerrado',1,1),
+  ('j-car-1-2','r-carrao','regional',1,2,'t-codigoverde','t-proleta',     'encerrado',0,0),
+  ('j-car-1-3','r-carrao','regional',1,3,'t-sodevirada','t-rayo',         'encerrado',2,2),
+  -- 2ª rodada
+  ('j-car-2-1','r-carrao','regional',2,1,'t-sodevirada','t-tap',          'encerrado',0,3),
+  ('j-car-2-2','r-carrao','regional',2,2,'t-corote','t-proleta',          'encerrado',1,1),
+  ('j-car-2-3','r-carrao','regional',2,3,'t-rayo','t-codigoverde',        'encerrado',1,3),
+  -- 3ª rodada
+  ('j-car-3-1','r-carrao','regional',3,1,'t-rayo','t-corote',             'encerrado',1,4),
+  ('j-car-3-2','r-carrao','regional',3,2,'t-tap','t-proleta',             'encerrado',0,1),
+  ('j-car-3-3','r-carrao','regional',3,3,'t-sodevirada','t-codigoverde',  'encerrado',1,5),
+  -- 4ª rodada
+  ('j-car-4-1','r-carrao','regional',4,1,'t-proleta','t-sodevirada',      'encerrado',3,0),
+  ('j-car-4-2','r-carrao','regional',4,2,'t-tap','t-rayo',                'encerrado',5,4),
+  ('j-car-4-3','r-carrao','regional',4,3,'t-codigoverde','t-corote',      'encerrado',0,0),
+  -- 5ª rodada (a organização chamou de "6ª"; num returno de 6 times
+  -- é a 5ª e última da fase regional)
+  ('j-car-5-1','r-carrao','regional',5,1,'t-proleta','t-rayo',            'agendado',null,null),
+  ('j-car-5-2','r-carrao','regional',5,2,'t-sodevirada','t-corote',       'agendado',null,null),
+  ('j-car-5-3','r-carrao','regional',5,3,'t-tap','t-codigoverde',         'agendado',null,null)
 on conflict (id) do nothing;
 
-insert into public.copa_ajustes
-  (id, time_id, jogos, vitorias, empates, derrotas, gols_pro, gols_contra, pontos, motivo) values
-  ('aj-car-codigoverde','t-codigoverde',4,2,2,0,8, 2,8,'Campanha das rodadas 1 a 4 (importada da tabela; placares individuais pendentes)'),
-  ('aj-car-proleta',    't-proleta',    4,2,2,0,5, 1,8,'Campanha das rodadas 1 a 4 (importada da tabela; placares individuais pendentes)'),
-  ('aj-car-tap',        't-tap',        4,2,1,1,9, 6,7,'Campanha das rodadas 1 a 4 (importada da tabela; placares individuais pendentes)'),
-  ('aj-car-corote',     't-corote',     4,1,3,0,6, 3,6,'Campanha das rodadas 1 a 4 (importada da tabela; placares individuais pendentes)'),
-  ('aj-car-rayo',       't-rayo',       4,0,1,3,8,14,1,'Campanha das rodadas 1 a 4 (importada da tabela; placares individuais pendentes)'),
-  ('aj-car-sodevirada', 't-sodevirada', 4,0,1,3,3,13,1,'Campanha das rodadas 1 a 4 (importada da tabela; placares individuais pendentes)')
-on conflict (id) do nothing;
+-- Os ajustes de campanha do Carrão existiram enquanto os placares
+-- individuais não eram conhecidos. Agora que os 12 jogos estão
+-- cadastrados, eles contariam a campanha DUAS vezes.
+delete from public.copa_ajustes where id like 'aj-car-%';
 
 -- ============================================================
 -- FINAIS DA FASE REGIONAL (Art. 6º)

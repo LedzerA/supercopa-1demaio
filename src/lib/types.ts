@@ -19,10 +19,18 @@ export type Time = {
   regional_id: string;
   nome: string;
   apelido: string | null;
+  /** Representante na Comissão (Art. 4º). Público — é função pública. */
   responsavel: string | null;
-  contato: string | null;
   desistente: boolean;
   lista_fechada: boolean;
+};
+
+/** Telefone/e-mail do representante. Tabela separada de propósito:
+ *  o RLS é por linha, não por coluna, e este dado é restrito a
+ *  admins (ver supabase/privacidade.sql). */
+export type Contato = {
+  time_id: string;
+  contato: string | null;
 };
 
 export type Jogo = {

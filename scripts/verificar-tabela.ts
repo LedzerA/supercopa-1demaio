@@ -2,7 +2,9 @@
    divulgada pela liga (arquivo "Regional Adriana Albuquerque.txt").
    Rode com:  node scripts/verificar-tabela.mjs   (veja README) */
 import { classificacao } from "../src/lib/standings";
-import type { Ajuste, Cartao, Jogo, Time } from "../src/lib/types";
+import type { Ajuste, Jogo, Time } from "../src/lib/types";
+
+const SEM_VERMELHOS = new Map<string, number>();
 
 const time = (id: string, nome: string, regional = "r"): Time => ({
   id,
@@ -10,7 +12,6 @@ const time = (id: string, nome: string, regional = "r"): Time => ({
   nome,
   apelido: nome,
   responsavel: null,
-  contato: null,
   desistente: false,
   lista_fechada: false,
 });
@@ -82,7 +83,7 @@ console.log("\nRegional Adriana Albuquerque (Lapa) — 3 rodadas jogadas");
     jogo("formigueiro", 3, 2, "bnh"), // deduzido da tabela
     jogo("brasil", 3, 2, "futanta"),
   ];
-  const t = classificacao(times, jogos, [] as Cartao[], [] as Ajuste[]);
+  const t = classificacao(times, jogos, SEM_VERMELHOS, [] as Ajuste[]);
   const resumo = t.map((l) => [
     l.time.nome,
     l.pontos,
@@ -134,7 +135,7 @@ console.log("\nRegional Magali Batista (Guarulhos) — com W.O. do TGFC");
     jogo("palestino", 3, 0, "tgfc", wo),
     jogo("familia", 3, 0, "tgfc", wo),
   ];
-  const t = classificacao(times, jogos, [] as Cartao[], [] as Ajuste[]);
+  const t = classificacao(times, jogos, SEM_VERMELHOS, [] as Ajuste[]);
   const resumo = t.map((l) => [l.time.nome, l.pontos, l.jogos, l.gols_pro, l.gols_contra]);
   // Mesma ordem publicada pela liga: Família, Havana, Palestino,
   // Sevira, Libertários. Havana e Palestino empatam em 6 pts e 2
@@ -168,7 +169,7 @@ console.log("\nConfronto direto (Art. 9º, critério 1)");
     jogo("b", 1, 0, "c"),
     jogo("b", 0, 1, "d"),
   ];
-  const t = classificacao(times, jogos, [] as Cartao[], [] as Ajuste[]);
+  const t = classificacao(times, jogos, SEM_VERMELHOS, [] as Ajuste[]);
   conferir(
     "pontos e saldo de A e B",
     [t[0].pontos, t[0].saldo, t[1].pontos, t[1].saldo],
@@ -190,20 +191,9 @@ console.log("\nCartões vermelhos (Art. 9º, critério 4)");
   // Empate total até o 3º critério; o 4º é cartões vermelhos, e menos
   // vermelhos fica na frente.
   const jogos = [jogo("a", 1, 1, "b")];
-  const cartoes: Cartao[] = [
-    {
-      id: "c1",
-      jogo_id: null,
-      time_id: "a",
-      jogador_id: null,
-      jogador_nome: "x",
-      tipo: "vermelho",
-      minuto: null,
-      descricao: null,
-      cumprido_em: [],
-    },
-  ];
-  const t = classificacao(times, jogos, cartoes, [] as Ajuste[]);
+  // Vem da view pública copa_vermelhos: só a contagem por time.
+  const vermelhos = new Map([["a", 1]]);
+  const t = classificacao(times, jogos, vermelhos, [] as Ajuste[]);
   conferir(
     "time com menos vermelhos fica na frente",
     t.map((l) => l.time.nome),
@@ -213,7 +203,7 @@ console.log("\nCartões vermelhos (Art. 9º, critério 4)");
 }
 
 // =====================================================================
-console.log("\nAjustes de campanha (Regional Carrão) e Art. 31");
+console.log("\nRegional Mateus Azevedo (Carrão) — 4 rodadas jogadas");
 // =====================================================================
 {
   const times = [
@@ -224,53 +214,48 @@ console.log("\nAjustes de campanha (Regional Carrão) e Art. 31");
     time("rayo", "Rayo Proletário"),
     time("sodevirada", "Só de Virada"),
   ];
-  const aj = (
-    id: string,
-    j: number,
-    v: number,
-    e: number,
-    d: number,
-    gp: number,
-    gc: number,
-    p: number
-  ): Ajuste => ({
-    id: `aj-${id}`,
-    time_id: id,
-    jogos: j,
-    vitorias: v,
-    empates: e,
-    derrotas: d,
-    gols_pro: gp,
-    gols_contra: gc,
-    pontos: p,
-    motivo: "importado",
-  });
-  const ajustes = [
-    aj("codigoverde", 4, 2, 2, 0, 8, 2, 8),
-    aj("proleta", 4, 2, 2, 0, 5, 1, 8),
-    aj("tap", 4, 2, 1, 1, 9, 6, 7),
-    aj("corote", 4, 1, 3, 0, 6, 3, 6),
-    aj("rayo", 4, 0, 1, 3, 8, 14, 1),
-    aj("sodevirada", 4, 0, 1, 3, 3, 13, 1),
+  // Os 12 placares informados pela organização.
+  const jogos = [
+    jogo("tap", 1, 1, "corote"),
+    jogo("codigoverde", 0, 0, "proleta"),
+    jogo("sodevirada", 2, 2, "rayo"),
+    jogo("sodevirada", 0, 3, "tap"),
+    jogo("corote", 1, 1, "proleta"),
+    jogo("rayo", 1, 3, "codigoverde"),
+    jogo("rayo", 1, 4, "corote"),
+    jogo("tap", 0, 1, "proleta"),
+    jogo("sodevirada", 1, 5, "codigoverde"),
+    jogo("proleta", 3, 0, "sodevirada"),
+    jogo("tap", 5, 4, "rayo"),
+    jogo("codigoverde", 0, 0, "corote"),
   ];
-  const t = classificacao(times, [], [] as Cartao[], ajustes);
-  conferir(
-    "ordem publicada pela liga",
-    t.map((l) => l.time.nome),
-    [
-      "Código Verde",
-      "Proletariado Alviverde",
-      "TAP",
-      "Corote & Molotov",
-      "Rayo Proletário",
-      "Só de Virada",
-    ]
-  );
-  conferir("saldo do Rayo", t[4].saldo, -6);
+  const t = classificacao(times, jogos, SEM_VERMELHOS, [] as Ajuste[]);
+  const resumo = t.map((l) => [
+    l.time.nome,
+    l.pontos,
+    l.jogos,
+    l.vitorias,
+    l.empates,
+    l.derrotas,
+    l.gols_pro,
+    l.gols_contra,
+    l.saldo,
+  ]);
+  // Confere os 12 placares contra a classificação divulgada pela liga.
+  conferir("tabela completa", resumo, [
+    ["Código Verde", 8, 4, 2, 2, 0, 8, 2, 6],
+    ["Proletariado Alviverde", 8, 4, 2, 2, 0, 5, 1, 4],
+    ["TAP", 7, 4, 2, 1, 1, 9, 6, 3],
+    ["Corote & Molotov", 6, 4, 1, 3, 0, 6, 3, 3],
+    ["Rayo Proletário", 1, 4, 0, 1, 3, 8, 14, -6],
+    ["Só de Virada", 1, 4, 0, 1, 3, 3, 13, -10],
+  ]);
+  // Código Verde e Proletariado empatam em 8 pts e 2 vitórias, e o
+  // confronto direto entre eles foi 0x0 — não separa. Decide o saldo.
+  conferir("critério que separou o 2º", t[1].desempate, "saldo de gols");
 
   // Art. 31 — invasão de campo tira 3 pontos.
-  const comPunicao = classificacao(times, [], [] as Cartao[], [
-    ...ajustes,
+  const comPunicao = classificacao(times, jogos, SEM_VERMELHOS, [
     {
       id: "pun",
       time_id: "codigoverde",

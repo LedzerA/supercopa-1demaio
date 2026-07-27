@@ -29,7 +29,7 @@ apps com contas diferentes ao mesmo tempo.
 Nenhuma tabela do Proleta é lida, alterada ou referenciada. Todas as
 tabelas daqui usam o prefixo `copa_`. Se um dia quiser um projeto
 Supabase exclusivo da Copa, é só trocar as duas constantes em
-`src/config.ts` e rodar os mesmos dois SQLs lá.
+`src/config.ts` e rodar os mesmos SQLs lá.
 
 ---
 
@@ -48,21 +48,17 @@ No Supabase → **SQL Editor**, rode na ordem:
 1. `supabase/schema.sql` — tabelas, RLS e a função `is_copa_admin()`
 2. `supabase/seed.sql` — as 3 regionais, os 18 times, os jogos já
    realizados, os que faltam, as finais e o chaveamento em branco
+3. `supabase/privacidade.sql` — fecha os dados sensíveis (ver abaixo)
 
-Os dois são idempotentes: podem ser rodados de novo sem apagar nada que
+Os três são idempotentes: podem ser rodados de novo sem apagar nada que
 você já tenha editado pelo site.
 
 ### 2. Liberar um administrador
 
-Cadastre a pessoa em **Authentication → Users** (ou peça para ela se
-cadastrar) e depois rode, trocando o e-mail:
-
-```sql
-insert into public.copa_admins (user_id, nome, email)
-select id, 'Nome da pessoa', email from auth.users
-where email = 'fulano@exemplo.com'
-on conflict (user_id) do nothing;
-```
+Cadastre a pessoa em **Authentication → Users → Add user** (ou peça para
+ela se cadastrar) e depois rode `supabase/admins.sql`, que já vem com um
+bloco pronto — é só trocar e-mail e nome. Se a conta ainda não existir,
+o script para com uma mensagem clara em vez de falhar em silêncio.
 
 Para revogar sem apagar a conta:
 
@@ -83,13 +79,44 @@ Pages, Netlify, Vercel ou qualquer hospedagem de arquivos. O Vite usa
 
 ---
 
+## O que é público e o que não é
+
+O site publicado é aberto: qualquer pessoa com o endereço navega sem
+login. `supabase/privacidade.sql` define a fronteira.
+
+**Público:** classificação, jogos e placares, chaveamento, elencos,
+nome do representante de cada equipe (Art. 4º — é função pública) e a
+situação financeira das equipes.
+
+**Só admin:** os cartões com o relato da súmula (`copa_cartoes`) e os
+telefones dos representantes (`copa_contatos`).
+
+O motivo do primeiro é o Art. 33: uma súmula pode nomear alguém acusado
+de agressão ou de ofensa racista, machista, xenofóbica, homofóbica,
+lesbofóbica ou transfóbica. Isso é material de deliberação da Comissão,
+não de vitrine pública.
+
+O RLS do Postgres é por **linha**, não por coluna — não dá para esconder
+só a coluna `contato` de quem lê `copa_times`. Por isso ela virou uma
+tabela separada.
+
+Um detalhe que não é opcional: a **contagem** de cartões vermelhos
+continua pública, pela view `copa_vermelhos`. Vermelhos são o 4º
+critério de desempate do Art. 9º; se o público não enxergasse esse
+número, a tabela exibida no site ordenaria diferente da oficial — o que
+seria pior que o problema original. A view expõe só `time_id` e a
+quantidade: nenhum nome, nenhum relato.
+
+---
+
 ## Comandos
 
 - `npm run dev` — servidor de desenvolvimento
 - `npm run build` — typecheck estrito + build de produção
 - `npm run verificar` — confere a classificação calculada contra a
-  tabela publicada pela liga (as três regionais, o confronto direto, os
-  cartões vermelhos e a punição do Art. 31)
+  tabela publicada pela liga (as três regionais a partir dos placares
+  reais, o confronto direto, os cartões vermelhos e a punição do
+  Art. 31). São 15 verificações.
 
 Não há suíte de testes além dessa; um build limpo + `verificar`
 passando é a régua.
@@ -154,14 +181,9 @@ ficaram em aberto e estão marcadas com `CONFERIR` no `seed.sql`:
    como desistente, com os 5 jogos marcados como W.O. Se ele segue na
    competição, desmarque em *Times*.
 
-E um caso que não é erro, é falta de dado:
-
-4. **Regional Carrão.** O txt traz só a classificação acumulada das
-   rodadas 1 a 4, sem os placares jogo a jogo. Essa campanha entrou em
-   `copa_ajustes` (tela *Disciplina → Ajustes de classificação*) e a 5ª
-   rodada entrou como jogo normal. **Quando você tiver os 12 placares,
-   cadastre os jogos e apague os 6 ajustes** — senão a campanha conta
-   duas vezes. A tela da regional avisa enquanto os ajustes existirem.
+A Regional Carrão, que a princípio tinha só a classificação agregada,
+já recebeu os 12 placares das rodadas 1 a 4 — conferidos time a time
+contra a tabela divulgada. Nada pendente lá além da última rodada.
 
 ## Jogos que ainda faltam
 
@@ -174,7 +196,8 @@ Pelo que o txt mostra, faltam **16 jogos** para fechar a fase regional:
   Libertários. Os pares foram distribuídos entre 4ª e 5ª rodadas por
   conta própria — reorganize em *Jogos* se a tabela oficial for outra.
 - **Carrão (3):** Proletariado × Rayo, Só de Virada × Corote, TAP ×
-  Código Verde.
+  Código Verde. A organização chamou de "6ª rodada"; num returno de 6
+  equipes é a 5ª, e foi cadastrada assim.
 
 Depois vêm as 9 finais regionais e os 15 jogos da Fase Lima Barreto, que
 já estão cadastrados esperando os times.

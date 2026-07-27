@@ -27,7 +27,6 @@
 import { classificacao, placar } from "./standings";
 import type {
   Ajuste,
-  Cartao,
   Jogo,
   LinhaTabela,
   RankingFinal,
@@ -69,10 +68,10 @@ export function decisao(j: Jogo | undefined): {
 export function campanhas(
   times: Time[],
   jogos: Jogo[],
-  cartoes: Cartao[],
+  vermelhos: Map<string, number>,
   ajustes: Ajuste[]
 ): Map<string, LinhaTabela> {
-  const linhas = classificacao(times, jogos, cartoes, ajustes, {
+  const linhas = classificacao(times, jogos, vermelhos, ajustes, {
     fases: ["regional", "final_regional"],
   });
   return new Map(linhas.map((l) => [l.time.id, l]));

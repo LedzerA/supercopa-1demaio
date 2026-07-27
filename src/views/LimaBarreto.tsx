@@ -14,10 +14,10 @@ import { JogoLinha } from "../components/JogoLinha";
 import type { LinhaTabela, Serie } from "../lib/types";
 
 export function LimaBarreto() {
-  const { times, jogos, cartoes, ajustes } = useStore();
+  const { times, jogos, vermelhos, ajustes } = useStore();
   const campanha = useMemo(
-    () => campanhas(times, jogos, cartoes, ajustes),
-    [times, jogos, cartoes, ajustes]
+    () => campanhas(times, jogos, vermelhos, ajustes),
+    [times, jogos, vermelhos, ajustes]
   );
 
   return (

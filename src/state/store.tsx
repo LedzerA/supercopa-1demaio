@@ -12,6 +12,7 @@ import { uid } from "../lib/uid";
 import type {
   Ajuste,
   Cartao,
+  Contato,
   Jogador,
   Jogo,
   Pagamento,
@@ -25,7 +26,13 @@ type Dados = {
   times: Time[];
   jogos: Jogo[];
   jogadores: Jogador[];
+  /** Vazio para quem não é admin — a leitura é restrita. */
   cartoes: Cartao[];
+  /** Idem. */
+  contatos: Contato[];
+  /** Contagem pública de vermelhos por time (view copa_vermelhos),
+   *  usada no 4º critério de desempate do Art. 9º. */
+  vermelhos: Map<string, number>;
   ajustes: Ajuste[];
   pagamentos: Pagamento[];
   ranking: RankingFinal[];
@@ -37,6 +44,8 @@ const VAZIO: Dados = {
   jogos: [],
   jogadores: [],
   cartoes: [],
+  contatos: [],
+  vermelhos: new Map(),
   ajustes: [],
   pagamentos: [],
   ranking: [],
@@ -61,6 +70,7 @@ type Ctx = Dados & {
   criarJogo: (campos: Partial<Jogo>) => Promise<void>;
   apagarJogo: (id: string) => Promise<void>;
   salvarTime: (id: string, campos: Partial<Time>) => Promise<void>;
+  salvarContato: (timeId: string, contato: string) => Promise<void>;
   criarJogador: (timeId: string, nome: string, extra?: Partial<Jogador>) => Promise<void>;
   apagarJogador: (id: string) => Promise<void>;
   criarCartao: (campos: Partial<Cartao> & { time_id: string; tipo: Cartao["tipo"] }) => Promise<void>;
@@ -102,6 +112,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       "copa_jogos",
       "copa_jogadores",
       "copa_cartoes",
+      "copa_contatos",
+      "copa_vermelhos",
       "copa_ajustes",
       "copa_pagamentos",
       "copa_ranking_final",
@@ -109,17 +121,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const respostas = await Promise.all(
       tabelas.map((t) => supabase.from(t).select("*"))
     );
-    const falha = respostas.find((r) => r.error);
+    // copa_cartoes e copa_contatos são restritas a admins: para quem
+    // não é admin elas voltam vazias, sem erro. Só as demais indicam
+    // que o banco não foi preparado.
+    const restritas = new Set(["copa_cartoes", "copa_contatos"]);
+    const falha = respostas.find(
+      (r, i) => r.error && !restritas.has(tabelas[i])
+    );
     if (falha?.error) {
       setErro(
         `Não consegui carregar os dados: ${falha.error.message}. ` +
-          `Você já rodou supabase/schema.sql e seed.sql no projeto?`
+          `Você já rodou supabase/schema.sql, seed.sql e privacidade.sql no projeto?`
       );
       setCarregando(false);
       return;
     }
-    const [regionais, times, jogos, jogadores, cartoes, ajustes, pagamentos, ranking] =
-      respostas.map((r) => r.data ?? []);
+    const [
+      regionais, times, jogos, jogadores, cartoes, contatos,
+      vermelhos, ajustes, pagamentos, ranking,
+    ] = respostas.map((r) => r.data ?? []);
     setDados({
       regionais: (regionais as Regional[]).sort((a, b) => a.posicao - b.posicao),
       times: (times as Time[]).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
@@ -130,6 +150,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         a.nome.localeCompare(b.nome, "pt-BR")
       ),
       cartoes: cartoes as Cartao[],
+      contatos: contatos as Contato[],
+      vermelhos: new Map(
+        (vermelhos as { time_id: string; vermelhos: number }[]).map((v) => [
+          v.time_id,
+          v.vermelhos,
+        ])
+      ),
       ajustes: ajustes as Ajuste[],
       pagamentos: (pagamentos as Pagamento[]).sort((a, b) => a.parcela - b.parcela),
       ranking: ranking as RankingFinal[],
@@ -262,6 +289,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [dados.times, escrever]
   );
 
+  /** copa_contatos tem time_id como chave primária (não `id`), e é
+   *  restrita a admins — por isso não passa pelo helper genérico. */
+  const salvarContato = useCallback(
+    async (timeId: string, contato: string) => {
+      const valor = contato.trim() || null;
+      setDados((d) => ({
+        ...d,
+        contatos: [
+          ...d.contatos.filter((c) => c.time_id !== timeId),
+          { time_id: timeId, contato: valor },
+        ],
+      }));
+      const { error } = await supabase
+        .from("copa_contatos")
+        .upsert({ time_id: timeId, contato: valor });
+      if (error) {
+        toast(`Não deu para salvar o contato: ${error.message}`);
+        await carregar();
+      }
+    },
+    [carregar, toast]
+  );
+
   const criarJogador = useCallback(
     async (timeId: string, nome: string, extra: Partial<Jogador> = {}) => {
       const novo: Jogador = {
@@ -307,8 +357,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       await escrever("copa_cartoes", "upsert", novo, () =>
         setDados((d) => ({ ...d, cartoes: [...d.cartoes, novo] }))
       );
+      // a contagem de vermelhos vem de uma view no servidor
+      await carregar();
     },
-    [escrever]
+    [carregar, escrever]
   );
 
   const salvarCartao = useCallback(
@@ -331,8 +383,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       await escrever("copa_cartoes", "delete", { id }, () =>
         setDados((d) => ({ ...d, cartoes: d.cartoes.filter((c) => c.id !== id) }))
       );
+      await carregar();
     },
-    [escrever]
+    [carregar, escrever]
   );
 
   const criarAjuste = useCallback(
@@ -421,6 +474,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       criarJogo,
       apagarJogo,
       salvarTime,
+      salvarContato,
       criarJogador,
       apagarJogador,
       criarCartao,
@@ -434,9 +488,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }),
     [
       dados, carregando, erro, email, isAdmin, aviso, entrar, sair, carregar,
-      toast, salvarJogo, criarJogo, apagarJogo, salvarTime, criarJogador,
-      apagarJogador, criarCartao, salvarCartao, apagarCartao, criarAjuste,
-      apagarAjuste, salvarPagamento, fixarRanking, limparRanking,
+      toast, salvarJogo, criarJogo, apagarJogo, salvarTime, salvarContato,
+      criarJogador, apagarJogador, criarCartao, salvarCartao, apagarCartao,
+      criarAjuste, apagarAjuste, salvarPagamento, fixarRanking, limparRanking,
     ]
   );
 

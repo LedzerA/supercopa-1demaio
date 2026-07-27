@@ -16,7 +16,7 @@
    continuam empatados. É a prática padrão e é o que faz o
    "confronto direto" ter sentido em grupos de 3 ou mais.
    ===================================================================== */
-import type { Ajuste, Cartao, Jogo, LinhaTabela, Time } from "./types";
+import type { Ajuste, Jogo, LinhaTabela, Time } from "./types";
 
 /** Jogos que contam para a tabela: só encerrados e W.O. */
 export function jogoVale(j: Jogo): boolean {
@@ -77,7 +77,11 @@ export type OpcoesTabela = {
 export function classificacao(
   times: Time[],
   jogos: Jogo[],
-  cartoes: Cartao[],
+  /** Cartões vermelhos por time (4º critério). Vem da view pública
+   *  `copa_vermelhos`, e não de `copa_cartoes` — o relato da súmula
+   *  é restrito a admins, mas a CONTAGEM precisa ser pública, senão
+   *  a tabela exibida ao público ordenaria diferente da oficial. */
+  vermelhos: Map<string, number>,
   ajustes: Ajuste[],
   opcoes: OpcoesTabela = {}
 ): LinhaTabela[] {
@@ -104,12 +108,11 @@ export function classificacao(
     if (fora) aplicaJogo(fora, p.fora, p.casa);
   }
 
-  // Cartões vermelhos (4º critério). Agressão (Art. 29) implica
-  // vermelho, então conta junto.
-  for (const c of cartoes) {
-    if (c.tipo !== "vermelho" && c.tipo !== "agressao") continue;
-    const linha = linhas.get(c.time_id);
-    if (linha) linha.vermelhos += 1;
+  // Cartões vermelhos (4º critério). A view já soma agressões
+  // (Art. 29) junto com os vermelhos (Art. 25).
+  for (const [timeId, qtd] of vermelhos) {
+    const linha = linhas.get(timeId);
+    if (linha) linha.vermelhos += qtd;
   }
 
   // Ajustes manuais: perda de pontos por invasão (Art. 31) e
