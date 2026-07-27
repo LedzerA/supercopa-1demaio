@@ -11,6 +11,7 @@ import { Times } from "./views/Times";
 import { Disciplina } from "./views/Disciplina";
 import { Financeiro } from "./views/Financeiro";
 import { Regulamento } from "./views/Regulamento";
+import { Historico } from "./views/Historico";
 
 /* A navegação é dividida em duas. Quem chega no site quer ver a
    tabela do seu time e quando ele joga — nada além disso. As telas
@@ -22,6 +23,7 @@ const ABAS_PUBLICAS = [
   { rota: "lima-barreto", nome: "Fase Final" },
   { rota: "times", nome: "Times" },
   { rota: "regulamento", nome: "Regras" },
+  { rota: "historico", nome: "Histórico" },
 ];
 
 const ABAS_ADMIN = [
@@ -120,6 +122,8 @@ function Conteudo({ rota, isAdmin }: { rota: string; isAdmin: boolean }) {
       return <Times />;
     case "regulamento":
       return <Regulamento />;
+    case "historico":
+      return <Historico />;
     case "painel":
       return isAdmin ? <Painel /> : <Regionais />;
     case "disciplina":

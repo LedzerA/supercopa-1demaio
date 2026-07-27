@@ -15,6 +15,7 @@ import type {
   Contato,
   Jogador,
   Jogo,
+  Log,
   Pagamento,
   RankingFinal,
   Regional,
@@ -36,6 +37,8 @@ type Dados = {
   ajustes: Ajuste[];
   pagamentos: Pagamento[];
   ranking: RankingFinal[];
+  /** Registro público de alterações, do mais recente ao mais antigo. */
+  log: Log[];
 };
 
 const VAZIO: Dados = {
@@ -49,6 +52,7 @@ const VAZIO: Dados = {
   ajustes: [],
   pagamentos: [],
   ranking: [],
+  log: [],
 };
 
 type Ctx = Dados & {
@@ -117,6 +121,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       "copa_ajustes",
       "copa_pagamentos",
       "copa_ranking_final",
+      "copa_log",
     ] as const;
     const respostas = await Promise.all(
       tabelas.map((t) => supabase.from(t).select("*"))
@@ -124,7 +129,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // copa_cartoes e copa_contatos são restritas a admins: para quem
     // não é admin elas voltam vazias, sem erro. Só as demais indicam
     // que o banco não foi preparado.
-    const restritas = new Set(["copa_cartoes", "copa_contatos"]);
+    // copa_log pode não existir ainda (migração log.sql). A tela de
+    // Histórico avisa; o resto do app não deve quebrar por isso.
+    const restritas = new Set(["copa_cartoes", "copa_contatos", "copa_log"]);
     const falha = respostas.find(
       (r, i) => r.error && !restritas.has(tabelas[i])
     );
@@ -138,7 +145,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     const [
       regionais, times, jogos, jogadores, cartoes, contatos,
-      vermelhos, ajustes, pagamentos, ranking,
+      vermelhos, ajustes, pagamentos, ranking, log,
     ] = respostas.map((r) => r.data ?? []);
     setDados({
       regionais: (regionais as Regional[]).sort((a, b) => a.posicao - b.posicao),
@@ -160,6 +167,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ajustes: ajustes as Ajuste[],
       pagamentos: (pagamentos as Pagamento[]).sort((a, b) => a.parcela - b.parcela),
       ranking: ranking as RankingFinal[],
+      log: (log as Log[]).sort((a, b) => b.quando.localeCompare(a.quando)),
     });
     setCarregando(false);
   }, []);
@@ -209,16 +217,66 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
   }, []);
 
+  /** Grava uma linha no registro público de alterações.
+   *  A descrição já vem pronta e sem dado sensível: o log é visível
+   *  para qualquer visitante, então ocorrências disciplinares entram
+   *  sem o nome de quem foi punido. Uma falha aqui nunca desfaz a
+   *  alteração em si — só some do histórico, e avisa. */
+  const registrar = useCallback(
+    async (categoria: string, descricao: string, alvoId?: string) => {
+      const { error } = await supabase.from("copa_log").insert({
+        id: uid("lg"),
+        email,
+        categoria,
+        descricao,
+        alvo_id: alvoId ?? null,
+      });
+      if (error) {
+        toast(
+          `A alteração foi salva, mas não entrou no histórico: ${error.message}`
+        );
+        return;
+      }
+      setDados((d) => ({
+        ...d,
+        log: [
+          {
+            id: uid("lg"),
+            quando: new Date().toISOString(),
+            user_id: null,
+            email,
+            categoria,
+            descricao,
+            alvo_id: alvoId ?? null,
+          },
+          ...d.log,
+        ],
+      }));
+    },
+    [email, toast]
+  );
+
+  /** Nome curto de um time, para escrever as frases do histórico. */
+  const nomeTime = useCallback(
+    (id: string | null | undefined) => {
+      const t = dados.times.find((x) => x.id === id);
+      return t?.apelido || t?.nome || "time";
+    },
+    [dados.times]
+  );
+
   /* ---------- escritas ----------
      Todas otimistas: o estado muda antes da rede e é revertido
-     (via recarregar) se o banco recusar. O RLS é a autoridade. */
+     (via recarregar) se o banco recusar. O RLS é a autoridade.
+     Retorna true quando o banco aceitou — é o que decide se a
+     alteração entra no registro público. */
   const escrever = useCallback(
     async <T,>(
       tabela: string,
       operacao: "upsert" | "delete",
       payload: T & { id: string },
       otimista: () => void
-    ) => {
+    ): Promise<boolean> => {
       otimista();
       const q =
         operacao === "delete"
@@ -228,7 +286,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (error) {
         toast(`Não deu para salvar: ${error.message}`);
         await carregar();
+        return false;
       }
+      return true;
     },
     [carregar, toast]
   );
@@ -238,14 +298,48 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const atual = dados.jogos.find((j) => j.id === id);
       if (!atual) return;
       const novo = { ...atual, ...campos };
-      await escrever("copa_jogos", "upsert", novo, () =>
+      const ok = await escrever("copa_jogos", "upsert", novo, () =>
         setDados((d) => ({
           ...d,
           jogos: d.jogos.map((j) => (j.id === id ? novo : j)),
         }))
       );
+      if (!ok) return;
+      const confronto = `${nomeTime(novo.mandante_id)} x ${nomeTime(novo.visitante_id)}`;
+      if (novo.status === "wo" && atual.status !== "wo") {
+        const venceu =
+          novo.wo_favoravel === "mandante" ? novo.mandante_id : novo.visitante_id;
+        await registrar(
+          "jogo",
+          `registrou W.O. favoravel ao ${nomeTime(venceu)} em ${confronto}`,
+          id
+        );
+      } else if (
+        novo.status === "encerrado" &&
+        (atual.status !== "encerrado" ||
+          atual.gols_mandante !== novo.gols_mandante ||
+          atual.gols_visitante !== novo.gols_visitante)
+      ) {
+        await registrar(
+          "jogo",
+          `lancou o placar ${nomeTime(novo.mandante_id)} ${novo.gols_mandante} x ` +
+            `${novo.gols_visitante} ${nomeTime(novo.visitante_id)}`,
+          id
+        );
+      } else if (atual.status !== novo.status) {
+        await registrar("jogo", `mudou ${confronto} para "${novo.status}"`, id);
+      } else if (atual.data !== novo.data || atual.local !== novo.local) {
+        const quando = novo.data
+          ? novo.data.split("-").reverse().join("/")
+          : "sem data";
+        await registrar(
+          "jogo",
+          `marcou ${confronto} para ${quando}${novo.local ? ` em ${novo.local}` : ""}`,
+          id
+        );
+      }
     },
-    [dados.jogos, escrever]
+    [dados.jogos, escrever, nomeTime, registrar]
   );
 
   const criarJogo = useCallback(
@@ -257,21 +351,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         status: "agendado",
         ...campos,
       } as Jogo;
-      await escrever("copa_jogos", "upsert", novo, () =>
+      const ok = await escrever("copa_jogos", "upsert", novo, () =>
         setDados((d) => ({ ...d, jogos: [...d.jogos, novo] }))
       );
+      if (ok)
+        await registrar(
+          "jogo",
+          `criou o jogo ${nomeTime(novo.mandante_id)} x ${nomeTime(novo.visitante_id)}`,
+          novo.id
+        );
       await carregar();
     },
-    [carregar, escrever]
+    [carregar, escrever, nomeTime, registrar]
   );
 
   const apagarJogo = useCallback(
     async (id: string) => {
-      await escrever("copa_jogos", "delete", { id }, () =>
+      const alvo = dados.jogos.find((j) => j.id === id);
+      const rotulo = alvo
+        ? `${nomeTime(alvo.mandante_id)} x ${nomeTime(alvo.visitante_id)}`
+        : "um jogo";
+      const ok = await escrever("copa_jogos", "delete", { id }, () =>
         setDados((d) => ({ ...d, jogos: d.jogos.filter((j) => j.id !== id) }))
       );
+      if (ok) await registrar("jogo", `apagou o jogo ${rotulo}`, id);
     },
-    [escrever]
+    [dados.jogos, escrever, nomeTime, registrar]
   );
 
   const salvarTime = useCallback(
@@ -279,14 +384,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const atual = dados.times.find((t) => t.id === id);
       if (!atual) return;
       const novo = { ...atual, ...campos };
-      await escrever("copa_times", "upsert", novo, () =>
+      const ok = await escrever("copa_times", "upsert", novo, () =>
         setDados((d) => ({
           ...d,
           times: d.times.map((t) => (t.id === id ? novo : t)),
         }))
       );
+      if (!ok) return;
+      if (atual.lista_fechada !== novo.lista_fechada)
+        await registrar(
+          "time",
+          `${novo.lista_fechada ? "fechou" : "reabriu"} a lista de inscritos do ${novo.nome}`,
+          id
+        );
+      else if (atual.desistente !== novo.desistente)
+        await registrar(
+          "time",
+          `marcou o ${novo.nome} como ${novo.desistente ? "fora da competicao" : "ativo"}`,
+          id
+        );
+      else if (atual.responsavel !== novo.responsavel)
+        await registrar("time", `alterou o representante do ${novo.nome}`, id);
     },
-    [dados.times, escrever]
+    [dados.times, escrever, registrar]
   );
 
   /** copa_contatos tem time_id como chave primária (não `id`), e é
@@ -307,9 +427,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (error) {
         toast(`Não deu para salvar o contato: ${error.message}`);
         await carregar();
+        return;
       }
+      await registrar("time", `atualizou o contato do ${nomeTime(timeId)}`, timeId);
     },
-    [carregar, toast]
+    [carregar, nomeTime, registrar, toast]
   );
 
   const criarJogador = useCallback(
@@ -323,23 +445,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         inscrito_em: new Date().toISOString().slice(0, 10),
         ...extra,
       };
-      await escrever("copa_jogadores", "upsert", novo, () =>
+      const ok = await escrever("copa_jogadores", "upsert", novo, () =>
         setDados((d) => ({ ...d, jogadores: [...d.jogadores, novo] }))
       );
+      if (ok)
+        await registrar(
+          "jogador",
+          `inscreveu ${novo.nome} no ${nomeTime(timeId)}`,
+          novo.id
+        );
     },
-    [escrever]
+    [escrever, nomeTime, registrar]
   );
 
   const apagarJogador = useCallback(
     async (id: string) => {
-      await escrever("copa_jogadores", "delete", { id }, () =>
+      const alvo = dados.jogadores.find((p) => p.id === id);
+      const ok = await escrever("copa_jogadores", "delete", { id }, () =>
         setDados((d) => ({
           ...d,
           jogadores: d.jogadores.filter((p) => p.id !== id),
         }))
       );
+      if (ok && alvo)
+        await registrar(
+          "jogador",
+          `removeu ${alvo.nome} da lista do ${nomeTime(alvo.time_id)}`,
+          id
+        );
     },
-    [escrever]
+    [dados.jogadores, escrever, nomeTime, registrar]
   );
 
   const criarCartao = useCallback(
@@ -354,13 +489,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         cumprido_em: [],
         ...campos,
       };
-      await escrever("copa_cartoes", "upsert", novo, () =>
+      const ok = await escrever("copa_cartoes", "upsert", novo, () =>
         setDados((d) => ({ ...d, cartoes: [...d.cartoes, novo] }))
       );
+      // O histórico é público: registra o tipo e o time, nunca o nome
+      // de quem foi punido nem o relato da súmula.
+      if (ok)
+        await registrar(
+          "disciplina",
+          `registrou uma ocorrencia do tipo "${novo.tipo}" no ${nomeTime(novo.time_id)}`,
+          novo.time_id
+        );
       // a contagem de vermelhos vem de uma view no servidor
       await carregar();
     },
-    [carregar, escrever]
+    [carregar, escrever, nomeTime, registrar]
   );
 
   const salvarCartao = useCallback(
@@ -368,24 +511,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const atual = dados.cartoes.find((c) => c.id === id);
       if (!atual) return;
       const novo = { ...atual, ...campos };
-      await escrever("copa_cartoes", "upsert", novo, () =>
+      const ok = await escrever("copa_cartoes", "upsert", novo, () =>
         setDados((d) => ({
           ...d,
           cartoes: d.cartoes.map((c) => (c.id === id ? novo : c)),
         }))
       );
+      if (ok && novo.cumprido_em.length > atual.cumprido_em.length)
+        await registrar(
+          "disciplina",
+          `deu baixa em uma suspensao do ${nomeTime(novo.time_id)}`,
+          novo.time_id
+        );
     },
-    [dados.cartoes, escrever]
+    [dados.cartoes, escrever, nomeTime, registrar]
   );
 
   const apagarCartao = useCallback(
     async (id: string) => {
-      await escrever("copa_cartoes", "delete", { id }, () =>
+      const alvo = dados.cartoes.find((c) => c.id === id);
+      const ok = await escrever("copa_cartoes", "delete", { id }, () =>
         setDados((d) => ({ ...d, cartoes: d.cartoes.filter((c) => c.id !== id) }))
       );
+      if (ok && alvo)
+        await registrar(
+          "disciplina",
+          `apagou uma ocorrencia do tipo "${alvo.tipo}" do ${nomeTime(alvo.time_id)}`,
+          alvo.time_id
+        );
       await carregar();
     },
-    [carregar, escrever]
+    [carregar, dados.cartoes, escrever, nomeTime, registrar]
   );
 
   const criarAjuste = useCallback(
@@ -401,20 +557,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         pontos: 0,
         ...campos,
       };
-      await escrever("copa_ajustes", "upsert", novo, () =>
+      const ok = await escrever("copa_ajustes", "upsert", novo, () =>
         setDados((d) => ({ ...d, ajustes: [...d.ajustes, novo] }))
       );
+      if (ok) {
+        const sinal = novo.pontos > 0 ? `+${novo.pontos}` : `${novo.pontos}`;
+        await registrar(
+          "ajuste",
+          `lancou ajuste de ${sinal} ponto(s) ao ${nomeTime(novo.time_id)} — ${novo.motivo}`,
+          novo.time_id
+        );
+      }
     },
-    [escrever]
+    [escrever, nomeTime, registrar]
   );
 
   const apagarAjuste = useCallback(
     async (id: string) => {
-      await escrever("copa_ajustes", "delete", { id }, () =>
+      const alvo = dados.ajustes.find((a) => a.id === id);
+      const ok = await escrever("copa_ajustes", "delete", { id }, () =>
         setDados((d) => ({ ...d, ajustes: d.ajustes.filter((a) => a.id !== id) }))
       );
+      if (ok && alvo)
+        await registrar(
+          "ajuste",
+          `apagou o ajuste do ${nomeTime(alvo.time_id)} — ${alvo.motivo}`,
+          alvo.time_id
+        );
     },
-    [escrever]
+    [dados.ajustes, escrever, nomeTime, registrar]
   );
 
   const salvarPagamento = useCallback(
@@ -422,14 +593,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const atual = dados.pagamentos.find((p) => p.id === id);
       if (!atual) return;
       const novo = { ...atual, ...campos };
-      await escrever("copa_pagamentos", "upsert", novo, () =>
+      const ok = await escrever("copa_pagamentos", "upsert", novo, () =>
         setDados((d) => ({
           ...d,
           pagamentos: d.pagamentos.map((p) => (p.id === id ? novo : p)),
         }))
       );
+      if (ok && atual.pago !== novo.pago)
+        await registrar(
+          "pagamento",
+          `marcou a ${novo.parcela}a parcela do ${nomeTime(novo.time_id)} como ` +
+            `${novo.pago ? "paga" : "em aberto"}`,
+          novo.time_id
+        );
     },
-    [dados.pagamentos, escrever]
+    [dados.pagamentos, escrever, nomeTime, registrar]
   );
 
   const fixarRanking = useCallback(
@@ -440,9 +618,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const comId = linhas.map((l) => ({ ...l, id: uid("rk") }));
       const { error } = await supabase.from("copa_ranking_final").insert(comId);
       if (error) toast(`Não deu para fixar a ordem: ${error.message}`);
+      else await registrar("chave", `fixou a ordem oficial da Serie ${serie}`);
       await carregar();
     },
-    [carregar, toast]
+    [carregar, registrar, toast]
   );
 
   const limparRanking = useCallback(
@@ -452,9 +631,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .delete()
         .eq("serie", serie);
       if (error) toast(`Não deu para limpar: ${error.message}`);
+      else
+        await registrar(
+          "chave",
+          `voltou a Serie ${serie} para a ordem sugerida`
+        );
       await carregar();
     },
-    [carregar, toast]
+    [carregar, registrar, toast]
   );
 
   const valor = useMemo<Ctx>(
@@ -491,6 +675,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toast, salvarJogo, criarJogo, apagarJogo, salvarTime, salvarContato,
       criarJogador, apagarJogador, criarCartao, salvarCartao, apagarCartao,
       criarAjuste, apagarAjuste, salvarPagamento, fixarRanking, limparRanking,
+      nomeTime, registrar,
     ]
   );
 

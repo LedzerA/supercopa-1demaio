@@ -7,7 +7,8 @@ import {
 } from "../lib/disciplina";
 import { plural } from "../lib/format";
 import { Cartao, Vazio, nomeCurto } from "../components/ui";
-import type { TipoCartao } from "../lib/types";
+import { MOTIVOS_AJUSTE, motivoPorId } from "../lib/ajustes";
+import type { Ajuste, TipoCartao } from "../lib/types";
 
 export function Disciplina() {
   const { isAdmin } = useStore();
@@ -314,9 +315,6 @@ function Ocorrencias() {
 
 function Ajustes() {
   const { ajustes, times, isAdmin, criarAjuste, apagarAjuste, toast } = useStore();
-  const [timeId, setTimeId] = useState("");
-  const [pontos, setPontos] = useState(-3);
-  const [motivo, setMotivo] = useState("Invasão de campo — Art. 31");
 
   return (
     <Cartao titulo="Ajustes de classificação">
@@ -373,43 +371,158 @@ function Ajustes() {
       )}
 
       {isAdmin && (
-        <div className="linha" style={{ marginTop: "0.7rem" }}>
-          <label className="campo" style={{ flex: 1, minWidth: "9rem" }}>
-            Time
-            <select value={timeId} onChange={(e) => setTimeId(e.target.value)}>
-              <option value="">escolha…</option>
-              {times.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="campo">
-            Pontos
-            <input
-              type="number"
-              value={pontos}
-              onChange={(e) => setPontos(Number(e.target.value))}
-            />
-          </label>
-          <label className="campo" style={{ flex: 2, minWidth: "10rem" }}>
-            Motivo
-            <input value={motivo} onChange={(e) => setMotivo(e.target.value)} />
-          </label>
-          <button
-            disabled={!timeId || !motivo.trim()}
-            onClick={async () => {
-              await criarAjuste({ time_id: timeId, pontos, motivo: motivo.trim() });
-              setTimeId("");
-              toast("Ajuste lançado.");
-            }}
-          >
-            Lançar
-          </button>
-        </div>
+        <NovoAjuste
+          aoLancar={async (dados) => {
+            await criarAjuste(dados);
+            toast("Ajuste lançado e registrado no histórico.");
+          }}
+        />
       )}
     </Cartao>
+  );
+}
+
+/** Lançar ajuste: o motivo vem de uma lista fechada e, quando o
+ *  regulamento fixa a penalidade, os pontos não são editáveis —
+ *  o Art. 31 diz 3 pontos, não "uns pontos a combinar". */
+function NovoAjuste({
+  aoLancar,
+}: {
+  aoLancar: (d: Partial<Ajuste> & { time_id: string; motivo: string }) => Promise<void>;
+}) {
+  const { times } = useStore();
+  const [timeId, setTimeId] = useState("");
+  const [motivoId, setMotivoId] = useState(MOTIVOS_AJUSTE[0].id);
+  const [pontosLivres, setPontosLivres] = useState(0);
+  const [detalhe, setDetalhe] = useState("");
+  const [campanha, setCampanha] = useState({
+    jogos: 0, vitorias: 0, empates: 0, derrotas: 0, gols_pro: 0, gols_contra: 0,
+  });
+
+  const motivo = motivoPorId(motivoId);
+  const travado = motivo.pontos !== null;
+  const pontos = travado ? motivo.pontos! : pontosLivres;
+  const exigeDetalhe = motivoId === "outro";
+  const podeLancar = !!timeId && (!exigeDetalhe || detalhe.trim().length > 3);
+
+  async function lancar() {
+    const texto = detalhe.trim()
+      ? `${motivo.rotulo} — ${detalhe.trim()}`
+      : motivo.rotulo;
+    await aoLancar({
+      time_id: timeId,
+      pontos,
+      motivo: texto,
+      ...(motivo.campanha ? campanha : {}),
+    });
+    setTimeId("");
+    setDetalhe("");
+    setPontosLivres(0);
+    setCampanha({ jogos: 0, vitorias: 0, empates: 0, derrotas: 0, gols_pro: 0, gols_contra: 0 });
+  }
+
+  const campo = (k: keyof typeof campanha, rot: string) => (
+    <label className="campo" key={k}>
+      {rot}
+      <input
+        type="number"
+        value={campanha[k]}
+        onChange={(e) => setCampanha({ ...campanha, [k]: Number(e.target.value) })}
+      />
+    </label>
+  );
+
+  return (
+    <div style={{ borderTop: "1px solid var(--creme-200)", marginTop: "1rem", paddingTop: "1rem" }}>
+      <h3>Lançar ajuste</h3>
+      <div className="filtros">
+        <label className="campo">
+          Time
+          <select value={timeId} onChange={(e) => setTimeId(e.target.value)}>
+            <option value="">escolha…</option>
+            {times.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="campo" style={{ flex: "2 1 14rem" }}>
+          Motivo
+          <select value={motivoId} onChange={(e) => setMotivoId(e.target.value)}>
+            {MOTIVOS_AJUSTE.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.rotulo}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="campo">
+          Pontos
+          {travado ? (
+            <input value={pontos} disabled title="Fixado pelo regulamento" />
+          ) : (
+            <input
+              type="number"
+              value={pontosLivres}
+              onChange={(e) => setPontosLivres(Number(e.target.value))}
+            />
+          )}
+        </label>
+      </div>
+
+      <p className="dica" style={{ marginTop: "0.5rem" }}>
+        {motivo.ajuda}
+        {travado && (
+          <>
+            {" "}
+            <strong>
+              A penalidade é de {Math.abs(pontos)} pontos e não pode ser
+              alterada.
+            </strong>
+          </>
+        )}
+      </p>
+
+      {motivo.campanha && (
+        <div className="filtros" style={{ marginTop: "0.5rem" }}>
+          {campo("jogos", "Jogos")}
+          {campo("vitorias", "Vitórias")}
+          {campo("empates", "Empates")}
+          {campo("derrotas", "Derrotas")}
+          {campo("gols_pro", "Gols pró")}
+          {campo("gols_contra", "Gols contra")}
+        </div>
+      )}
+
+      <label className="campo" style={{ marginTop: "0.6rem" }}>
+        {exigeDetalhe ? "Decisão da Comissão (obrigatório)" : "Detalhe (opcional)"}
+        <input
+          value={detalhe}
+          onChange={(e) => setDetalhe(e.target.value)}
+          placeholder={
+            exigeDetalhe
+              ? "ex.: reunião extraordinária de 12/08 — ver ata"
+              : "ex.: jogo da 3ª rodada, súmula do árbitro"
+          }
+        />
+      </label>
+
+      <button
+        className="primario"
+        style={{ marginTop: "0.7rem" }}
+        disabled={!podeLancar}
+        onClick={lancar}
+      >
+        Lançar ajuste
+      </button>
+      {exigeDetalhe && !podeLancar && timeId && (
+        <p className="dica">
+          Descreva a decisão: um ajuste sem justificativa registrada não se
+          sustenta numa reunião.
+        </p>
+      )}
+    </div>
   );
 }
 

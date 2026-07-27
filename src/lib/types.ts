@@ -109,6 +109,17 @@ export type RankingFinal = {
   time_id: string;
 };
 
+/** Uma alteração feita por um administrador. Público e imutável. */
+export type Log = {
+  id: string;
+  quando: string;
+  user_id: string | null;
+  email: string | null;
+  categoria: string;
+  descricao: string;
+  alvo_id: string | null;
+};
+
 /** Linha calculada da tabela de classificação. */
 export type LinhaTabela = {
   time: Time;
