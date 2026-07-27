@@ -59,18 +59,16 @@ Ao todo faltam **16 jogos** para encerrar a fase regional.
 - 4ª rodada: Subúrbio Geral × Futantã · Brasil × Formigueiro · União Lapa × BNH
 - 5ª rodada: Subúrbio Geral × Brasil · Formigueiro × União Lapa · Futantã × BNH
 
-### Regional Magali Batista (Guarulhos) — 6 jogos
+### Regional Magali Batista (Guarulhos) — 6 jogos · ✅ calendário definido
 
-- Família × Havana
-- Família × Sevira FC
-- Havana × Palestino
-- Havana × Sevira FC
-- Palestino × Libertários
-- Sevira FC × Libertários
+- **3ª rodada — 01/08/2026, sábado:** Sevira × Família (12h) ·
+  Havana × Palestino (14h)
+- **4ª rodada — 16/08/2026, domingo:** Havana × Família (12h) ·
+  Libertários × Sevira (14h)
+- **5ª rodada — data a definir:** Havana × Sevira ·
+  Libertários × Palestino
 
-➡️ **Esses 6 jogos foram distribuídos entre 4ª e 5ª rodada por conta
-própria, porque a lista original não dizia. Qual é a divisão oficial
-por rodada?**
+➡️ **Falta a data da 5ª rodada.**
 
 ### Regional Mateus Azevedo (Carrão) — 3 jogos
 

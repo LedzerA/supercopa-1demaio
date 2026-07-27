@@ -87,18 +87,26 @@ insert into public.copa_jogos
   ('j-gua-2-1','r-guarulhos','regional',2,1,'t-havana','t-tgfc',         'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
   ('j-gua-2-2','r-guarulhos','regional',2,2,'t-palestino','t-sevira',    'encerrado',2,0,null,null),
   ('j-gua-2-3','r-guarulhos','regional',2,3,'t-familia','t-libertarios', 'encerrado',2,0,null,null),
-  -- 3ª rodada
-  ('j-gua-3-1','r-guarulhos','regional',3,1,'t-libertarios','t-tgfc',    'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
-  ('j-gua-3-2','r-guarulhos','regional',3,2,'t-palestino','t-tgfc',      'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
-  ('j-gua-3-3','r-guarulhos','regional',3,3,'t-familia','t-tgfc',        'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
-  -- rodadas 4 e 5 (a definir os pares exatos por rodada)
-  ('j-gua-4-1','r-guarulhos','regional',4,1,'t-familia','t-havana',      'agendado',null,null,null,null),
-  ('j-gua-4-2','r-guarulhos','regional',4,2,'t-havana','t-palestino',    'agendado',null,null,null,null),
-  ('j-gua-4-3','r-guarulhos','regional',4,3,'t-palestino','t-libertarios','agendado',null,null,null,null),
-  ('j-gua-5-1','r-guarulhos','regional',5,1,'t-familia','t-sevira',      'agendado',null,null,null,null),
-  ('j-gua-5-2','r-guarulhos','regional',5,2,'t-havana','t-sevira',       'agendado',null,null,null,null),
-  ('j-gua-5-3','r-guarulhos','regional',5,3,'t-sevira','t-libertarios',  'agendado',null,null,null,null)
+  -- 3ª rodada — 01/08/2026, sábado
+  ('j-gua-5-1','r-guarulhos','regional',3,1,'t-sevira','t-familia',      'agendado',null,null,null,null),
+  ('j-gua-4-2','r-guarulhos','regional',3,2,'t-havana','t-palestino',    'agendado',null,null,null,null),
+  ('j-gua-3-1','r-guarulhos','regional',3,3,'t-libertarios','t-tgfc',    'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
+  -- 4ª rodada — 16/08/2026, domingo
+  ('j-gua-4-1','r-guarulhos','regional',4,1,'t-havana','t-familia',      'agendado',null,null,null,null),
+  ('j-gua-5-3','r-guarulhos','regional',4,2,'t-libertarios','t-sevira',  'agendado',null,null,null,null),
+  ('j-gua-3-2','r-guarulhos','regional',4,3,'t-palestino','t-tgfc',      'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
+  -- 5ª rodada — data a definir
+  ('j-gua-5-2','r-guarulhos','regional',5,1,'t-havana','t-sevira',       'agendado',null,null,null,null),
+  ('j-gua-4-3','r-guarulhos','regional',5,2,'t-libertarios','t-palestino','agendado',null,null,null,null),
+  ('j-gua-3-3','r-guarulhos','regional',5,3,'t-familia','t-tgfc',        'wo',3,0,'mandante','W.O. — TGFC abandonou a competição')
 on conflict (id) do nothing;
+
+-- Datas da 3ª e 4ª rodadas (o insert acima não as traz para não
+-- sobrescrever remarcações feitas pelo site).
+update public.copa_jogos set data = '2026-08-01', horario = '12:00' where id = 'j-gua-5-1' and data is null;
+update public.copa_jogos set data = '2026-08-01', horario = '14:00' where id = 'j-gua-4-2' and data is null;
+update public.copa_jogos set data = '2026-08-16', horario = '12:00' where id = 'j-gua-4-1' and data is null;
+update public.copa_jogos set data = '2026-08-16', horario = '14:00' where id = 'j-gua-5-3' and data is null;
 
 -- CONFERIR (Havana): a classificação do txt traz GP 6 / GC 1, mas os
 -- jogos listados somam 5 gols pró e 0 contra. Os JOGOS são a fonte da
