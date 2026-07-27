@@ -30,9 +30,8 @@ insert into public.copa_times (id, regional_id, nome, apelido, desistente) value
   ('t-palestino',   'r-guarulhos', 'Palestino',              'Palestino',   false),
   ('t-sevira',      'r-guarulhos', 'Sevira FC',              'Sevira',      false),
   ('t-libertarios', 'r-guarulhos', 'Libertários',            'Libertários', false),
-  -- CONFERIR: o TGFC perdeu todos os 5 jogos por 3x0 (placar de W.O.,
-  -- Art. 24) e não aparece na classificação do txt -> marcado como
-  -- desistente. Se ele segue na competição, desmarque no site.
+  -- TGFC abandonou a competição (confirmado pela organização): os 5
+  -- jogos entraram como W.O. 3x0 ao adversário (Art. 24).
   ('t-tgfc',        'r-guarulhos', 'TGFC',                   'TGFC',        true),
   -- Regional Mateus Azevedo (Carrão / Zona Leste)
   ('t-codigoverde', 'r-carrao',    'Código Verde',           'Código Verde',false),
@@ -82,16 +81,16 @@ insert into public.copa_jogos
    status, gols_mandante, gols_visitante, wo_favoravel, observacoes) values
   -- 1ª rodada
   ('j-gua-1-1','r-guarulhos','regional',1,1,'t-familia','t-palestino',   'encerrado',3,1,null,null),
-  ('j-gua-1-2','r-guarulhos','regional',1,2,'t-sevira','t-tgfc',         'wo',3,0,'mandante','W.O. do TGFC (CONFERIR)'),
+  ('j-gua-1-2','r-guarulhos','regional',1,2,'t-sevira','t-tgfc',         'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
   ('j-gua-1-3','r-guarulhos','regional',1,3,'t-havana','t-libertarios',  'encerrado',2,0,null,null),
   -- 2ª rodada
-  ('j-gua-2-1','r-guarulhos','regional',2,1,'t-havana','t-tgfc',         'wo',3,0,'mandante','W.O. do TGFC (CONFERIR)'),
+  ('j-gua-2-1','r-guarulhos','regional',2,1,'t-havana','t-tgfc',         'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
   ('j-gua-2-2','r-guarulhos','regional',2,2,'t-palestino','t-sevira',    'encerrado',2,0,null,null),
   ('j-gua-2-3','r-guarulhos','regional',2,3,'t-familia','t-libertarios', 'encerrado',2,0,null,null),
   -- 3ª rodada
-  ('j-gua-3-1','r-guarulhos','regional',3,1,'t-libertarios','t-tgfc',    'wo',3,0,'mandante','W.O. do TGFC (CONFERIR)'),
-  ('j-gua-3-2','r-guarulhos','regional',3,2,'t-palestino','t-tgfc',      'wo',3,0,'mandante','W.O. do TGFC (CONFERIR)'),
-  ('j-gua-3-3','r-guarulhos','regional',3,3,'t-familia','t-tgfc',        'wo',3,0,'mandante','W.O. do TGFC (CONFERIR)'),
+  ('j-gua-3-1','r-guarulhos','regional',3,1,'t-libertarios','t-tgfc',    'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
+  ('j-gua-3-2','r-guarulhos','regional',3,2,'t-palestino','t-tgfc',      'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
+  ('j-gua-3-3','r-guarulhos','regional',3,3,'t-familia','t-tgfc',        'wo',3,0,'mandante','W.O. — TGFC abandonou a competição'),
   -- rodadas 4 e 5 (a definir os pares exatos por rodada)
   ('j-gua-4-1','r-guarulhos','regional',4,1,'t-familia','t-havana',      'agendado',null,null,null,null),
   ('j-gua-4-2','r-guarulhos','regional',4,2,'t-havana','t-palestino',    'agendado',null,null,null,null),
@@ -131,8 +130,7 @@ insert into public.copa_jogos
   ('j-car-4-1','r-carrao','regional',4,1,'t-proleta','t-sodevirada',      'encerrado',3,0),
   ('j-car-4-2','r-carrao','regional',4,2,'t-tap','t-rayo',                'encerrado',5,4),
   ('j-car-4-3','r-carrao','regional',4,3,'t-codigoverde','t-corote',      'encerrado',0,0),
-  -- 5ª rodada (a organização chamou de "6ª"; num returno de 6 times
-  -- é a 5ª e última da fase regional)
+  -- 5ª e última rodada da fase regional
   ('j-car-5-1','r-carrao','regional',5,1,'t-proleta','t-rayo',            'agendado',null,null),
   ('j-car-5-2','r-carrao','regional',5,2,'t-sodevirada','t-corote',       'agendado',null,null),
   ('j-car-5-3','r-carrao','regional',5,3,'t-tap','t-codigoverde',         'agendado',null,null)

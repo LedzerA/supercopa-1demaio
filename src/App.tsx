@@ -12,60 +12,64 @@ import { Disciplina } from "./views/Disciplina";
 import { Financeiro } from "./views/Financeiro";
 import { Regulamento } from "./views/Regulamento";
 
-const ABAS = [
-  { rota: "", nome: "Painel" },
+/* A navegação é dividida em duas. Quem chega no site quer ver a
+   tabela do seu time e quando ele joga — nada além disso. As telas
+   de operação da Copa só aparecem para quem administra, senão o
+   visitante encara oito abas das quais três não lhe dizem respeito. */
+const ABAS_PUBLICAS = [
+  { rota: "", nome: "Tabelas" },
   { rota: "jogos", nome: "Jogos" },
-  { rota: "regionais", nome: "Regionais" },
-  { rota: "lima-barreto", nome: "Lima Barreto" },
+  { rota: "lima-barreto", nome: "Fase Final" },
   { rota: "times", nome: "Times" },
+  { rota: "regulamento", nome: "Regras" },
+];
+
+const ABAS_ADMIN = [
+  { rota: "painel", nome: "Painel" },
   { rota: "disciplina", nome: "Disciplina" },
   { rota: "financeiro", nome: "Financeiro" },
-  { rota: "regulamento", nome: "Regulamento" },
 ];
 
 export function App() {
   const { autenticado, isAdmin, email, sair, carregando, erro, aviso } = useStore();
   const hash = useHash();
   const rota = partes(hash)[0] ?? "";
+  const abas = isAdmin ? [...ABAS_PUBLICAS, ...ABAS_ADMIN] : ABAS_PUBLICAS;
 
   return (
     <>
       <header className="topo">
-        <div>
+        <a
+          className="marca-topo"
+          href="#/"
+          onClick={(e) => {
+            e.preventDefault();
+            irPara("#/");
+          }}
+        >
           <h1>
-            {COPA.nome} {COPA.edicao}
+            {COPA.nome} <span className="ano">{COPA.edicao}</span>
           </h1>
-          <div className="sub">
-            {isAdmin ? "Administração · " : ""}
-            {COPA.liga}
-          </div>
-        </div>
+          <div className="sub">{COPA.liga}</div>
+        </a>
         <div className="direita">
           {autenticado ? (
             <>
               <span className="quem">{email}</span>
-              <button
-                className="discreto"
-                style={{ color: "#fdfaf4" }}
-                onClick={sair}
-              >
+              <button className="botao-topo" onClick={sair}>
                 Sair
               </button>
             </>
           ) : (
-            <button
-              className="discreto"
-              style={{ color: "#fdfaf4" }}
-              onClick={() => irPara("#/entrar")}
-            >
+            <button className="botao-topo" onClick={() => irPara("#/entrar")}>
               Entrar
             </button>
           )}
         </div>
       </header>
 
-      <nav className="abas">
-        {ABAS.map((a) => (
+      <nav className="abas" aria-label="Seções do site">
+        {abas.map((a) => (
           <button
             key={a.rota}
             className={rota === a.rota ? "ativa" : ""}
@@ -77,15 +81,11 @@ export function App() {
       </nav>
 
       <main>
-        {/* Visitante sem login não vê aviso nenhum: navegar sem conta é
-            o uso normal do site. O aviso só faz sentido para quem
-            entrou e mesmo assim não pode escrever. */}
         {autenticado && !isAdmin && (
           <Aviso>
             <strong>Você está em modo leitura.</strong> Sua conta não está na
-            lista de administradores <em>desta</em> competição. Ser admin do
-            statsproleta não dá acesso aqui — os ambientes são separados. Para
-            liberar, rode <code>supabase/admins.sql</code> com este e-mail.
+            lista de administradores desta competição. Para liberar, rode{" "}
+            <code>supabase/admins.sql</code> com este e-mail.
           </Aviso>
         )}
         {erro && <Aviso erro>{erro}</Aviso>}
@@ -94,32 +94,41 @@ export function App() {
         ) : rota === "entrar" ? (
           <Entrar />
         ) : (
-          <Conteudo rota={rota} />
+          <Conteudo rota={rota} isAdmin={isAdmin} />
         )}
       </main>
+
+      <footer className="rodape">
+        <p>
+          {COPA.nome} {COPA.edicao} · {COPA.liga}
+        </p>
+        <p>Futebol de várzea antifascista da Grande São Paulo.</p>
+      </footer>
 
       {aviso && <div className="toast">{aviso}</div>}
     </>
   );
 }
 
-function Conteudo({ rota }: { rota: string }) {
+function Conteudo({ rota, isAdmin }: { rota: string; isAdmin: boolean }) {
   switch (rota) {
     case "jogos":
       return <Jogos />;
-    case "regionais":
-      return <Regionais />;
     case "lima-barreto":
       return <LimaBarreto />;
     case "times":
       return <Times />;
+    case "regulamento":
+      return <Regulamento />;
+    case "painel":
+      return isAdmin ? <Painel /> : <Regionais />;
     case "disciplina":
       return <Disciplina />;
     case "financeiro":
       return <Financeiro />;
-    case "regulamento":
-      return <Regulamento />;
     default:
-      return <Painel />;
+      // A porta de entrada é a classificação: é o que praticamente
+      // todo mundo veio ver.
+      return <Regionais />;
   }
 }

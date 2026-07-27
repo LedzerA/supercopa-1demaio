@@ -9,9 +9,12 @@ import type { Jogo, StatusJogo, Time } from "../lib/types";
 export function JogoLinha({
   jogo,
   mostrarFase,
+  /** Some com "3ª rodada" quando o título do grupo já diz isso. */
+  semRodada,
 }: {
   jogo: Jogo;
   mostrarFase?: string;
+  semRodada?: boolean;
 }) {
   const { times, isAdmin, salvarJogo, toast } = useStore();
   const [aberto, setAberto] = useState(false);
@@ -27,13 +30,9 @@ export function JogoLinha({
       </div>
       <div className="placar">
         {p ? (
-          <>
-            <span>{p.casa}</span>
-            <span style={{ opacity: 0.4 }}>×</span>
-            <span>{p.fora}</span>
-          </>
+          `${p.casa} × ${p.fora}`
         ) : (
-          <span style={{ opacity: 0.35 }}>× </span>
+          <span className="vs">×</span>
         )}
       </div>
       <div className="fora">
@@ -41,23 +40,28 @@ export function JogoLinha({
       </div>
 
       <div className="meta">
-        <SeloStatus status={jogo.status} />
+        {/* Um jogo encerrado já se explica pelo placar; repetir
+            "Encerrado" em toda linha é ruído. O selo só aparece
+            quando a situação NÃO é a normal. */}
+        {jogo.status !== "encerrado" && <SeloStatus status={jogo.status} />}
         {mostrarFase && <span>{mostrarFase}</span>}
-        {jogo.rodada != null && <span>{jogo.rodada}ª rodada</span>}
-        {jogo.data && (
+        {jogo.rodada != null && !semRodada && <span>{jogo.rodada}ª rodada</span>}
+        {jogo.data ? (
           <span>
             {dataBR(jogo.data)}
             {jogo.horario ? ` · ${jogo.horario}` : ""}
           </span>
+        ) : (
+          jogo.status === "agendado" && <span>data a definir</span>
         )}
         {jogo.local && <span>{jogo.local}</span>}
         {jogo.observacoes && (
-          <span title={jogo.observacoes} style={{ fontStyle: "italic" }}>
-            ⚑ {jogo.observacoes}
+          <span className="obs" title={jogo.observacoes}>
+            {jogo.observacoes}
           </span>
         )}
         {isAdmin && (
-          <button className="discreto espaco" onClick={() => setAberto((v) => !v)}>
+          <button className="discreto" onClick={() => setAberto((v) => !v)}>
             {aberto ? "fechar" : "editar"}
           </button>
         )}

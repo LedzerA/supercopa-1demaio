@@ -12,7 +12,7 @@ export function Regionais() {
   if (!regionais.length)
     return (
       <Cartao>
-        <Vazio>Nenhuma regional cadastrada. Rode o seed.sql.</Vazio>
+        <Vazio>Nenhuma regional cadastrada.</Vazio>
       </Cartao>
     );
   return (
@@ -20,6 +20,7 @@ export function Regionais() {
       {regionais.map((r) => (
         <BlocoRegional key={r.id} regional={r} />
       ))}
+      <Legenda />
     </>
   );
 }
@@ -67,70 +68,86 @@ function BlocoRegional({ regional }: { regional: Regional }) {
 
   const ajusteImportado = ajustesDoGrupo.filter((a) => a.jogos > 0);
 
-  return (
-    <Cartao
-      titulo={
-        <span>
-          {regional.nome}{" "}
-          <span className="dica" style={{ fontWeight: 400 }}>
-            · {regional.regiao}
-          </span>
-        </span>
-      }
-    >
-      {faltam > 0 && (
-        <Aviso>
-          Faltam <strong>{faltam}</strong> jogo{faltam > 1 ? "s" : ""} para
-          encerrar a fase regional. A classificação abaixo é parcial.
-        </Aviso>
-      )}
+  // Art. 6º cruza 1º×2º, 3º×4º e 5º×6º. Se um dos seis abandonou
+  // (Art. 18 parágrafo único), a final dele não tem como ser jogada
+  // e a série fica sem representante desta regional na Fase Lima
+  // Barreto. Quem decide é a Comissão (Art. 38) — o site só avisa.
+  const finaisComprometidas = SERIES.map((serie) => {
+    const [a, b] = POSICOES_FINAL[serie];
+    const dupla = [tabela[a - 1], tabela[b - 1]].filter(Boolean);
+    const fora = dupla.filter((l) => l.time.desistente).map((l) => l.time);
+    return { serie, fora, dupla };
+  }).filter((f) => f.fora.length > 0);
 
-      {ajusteImportado.length > 0 && (
-        <Aviso>
-          Esta regional tem campanha lançada por <strong>ajuste manual</strong> (
-          {ajusteImportado.length} time
-          {ajusteImportado.length > 1 ? "s" : ""}), porque os placares jogo a
-          jogo ainda não foram registrados. Ao cadastrar os jogos, apague os
-          ajustes em <em>Disciplina → Ajustes de classificação</em> — senão a
-          campanha conta duas vezes.
-        </Aviso>
-      )}
+  return (
+    <Cartao>
+      <div className="titulo-bloco">
+        <h2>{regional.nome}</h2>
+        <div className="lugar">
+          {regional.regiao}
+          {faltam > 0
+            ? ` · faltam ${faltam} jogo${faltam > 1 ? "s" : ""}`
+            : " · fase regional encerrada"}
+        </div>
+      </div>
 
       <Tabela tabela={tabela} />
 
-      <h3 style={{ marginTop: "1.2rem" }}>Finais da Fase Regional</h3>
-      <p className="dica" style={{ marginTop: 0 }}>
-        Art. 6º — Final Ouro 1º×2º, Prata 3º×4º, Bronze 5º×6º. Cada uma vale um
-        troféu e define quem vai à Fase Lima Barreto.
+      {ajusteImportado.length > 0 && (
+        <Aviso>
+          Parte da campanha desta regional está lançada como ajuste manual, sem
+          os placares jogo a jogo. Ao cadastrar os jogos, apague os ajustes —
+          senão a campanha conta duas vezes.
+        </Aviso>
+      )}
+
+      {finaisComprometidas.map(({ serie, fora, dupla }) => (
+        <Aviso key={serie}>
+          <strong>
+            A Final {ROTULO_SERIE[serie]} desta regional não tem como ser
+            jogada.
+          </strong>{" "}
+          O confronto seria {dupla.map((l) => nomeCurto(l.time)).join(" × ")}, e{" "}
+          {fora.map((t) => nomeCurto(t)).join(" e ")} está fora da competição.
+          Sem essa final, a regional fica sem campeão e sem vice na{" "}
+          {ROTULO_SERIE[serie]} da Fase Final. É caso omisso — cabe à Comissão
+          Organizadora decidir (Art. 38).
+        </Aviso>
+      ))}
+
+      <h3 style={{ marginTop: "1.3rem" }}>Finais da regional</h3>
+      <p className="explica">
+        Quem termina em 1º e 2º disputa o troféu Ouro; 3º e 4º, o Prata; 5º e
+        6º, o Bronze. Os vencedores e vices vão para a Fase Final.
       </p>
+
       {isAdmin && (
-        <div className="linha" style={{ marginBottom: "0.5rem" }}>
+        <div className="linha" style={{ marginBottom: "0.7rem" }}>
           <button
             className={finaisDefinidas ? "" : "primario"}
             onClick={definirFinais}
             disabled={tabela.length < 6}
           >
             {finaisDefinidas
-              ? "Regravar finais pela classificação atual"
+              ? "Regravar finais pela classificação"
               : "Definir finais pela classificação"}
           </button>
           {faltam > 0 && (
-            <span className="dica">
-              cuidado: a fase regional ainda não terminou
-            </span>
+            <span className="dica">a fase regional ainda não terminou</span>
           )}
         </div>
       )}
+
       {finais.length === 0 ? (
-        <Vazio>Finais não cadastradas. Rode o seed.sql.</Vazio>
+        <Vazio>Finais ainda não cadastradas.</Vazio>
       ) : (
         SERIES.map((s) => {
           const j = finais.find((f) => f.serie === s);
           if (!j) return null;
           return (
             <div key={s}>
-              <div className="etapa" style={{ marginTop: "0.4rem" }}>
-                Final {ROTULO_SERIE[s]}
+              <div className="etapa">
+                <span className={`selo ${s}`}>{ROTULO_SERIE[s]}</span>
               </div>
               <JogoLinha jogo={j} />
             </div>
@@ -156,17 +173,15 @@ function Tabela({ tabela }: { tabela: LinhaTabela[] }) {
           <tr>
             <th className="pos"></th>
             <th>Time</th>
-            <th className="n">P</th>
-            <th className="n">J</th>
-            <th className="n">V</th>
-            <th className="n">E</th>
-            <th className="n">D</th>
-            <th className="n">GP</th>
-            <th className="n">GC</th>
-            <th className="n">SG</th>
-            <th className="n" title="Cartões vermelhos — 4º critério de desempate">
-              CV
-            </th>
+            <th className="n" title="Pontos">P</th>
+            <th className="n" title="Jogos disputados">J</th>
+            <th className="n col-opc" title="Vitórias">V</th>
+            <th className="n col-opc" title="Empates">E</th>
+            <th className="n col-opc" title="Derrotas">D</th>
+            <th className="n col-opc" title="Gols marcados">GP</th>
+            <th className="n col-opc" title="Gols sofridos">GC</th>
+            <th className="n" title="Saldo de gols">SG</th>
+            <th className="n col-opc" title="Cartões vermelhos">CV</th>
           </tr>
         </thead>
         <tbody>
@@ -175,36 +190,67 @@ function Tabela({ tabela }: { tabela: LinhaTabela[] }) {
             const faixa = faixaDaPosicao(pos);
             return (
               <tr key={l.time.id} className={faixa ? `faixa-${faixa}` : ""}>
-                <td className="pos">{pos}º</td>
+                <td className="pos">{pos}</td>
                 <td>
-                  <span style={{ fontWeight: 600 }}>{nomeCurto(l.time)}</span>
+                  <span className="time-nome">{nomeCurto(l.time)}</span>
                   {l.time.desistente && (
                     <span className="selo grave" style={{ marginLeft: "0.4rem" }}>
-                      desistente
+                      fora
                     </span>
                   )}
                   {l.desempate && (
-                    <div className="dica" style={{ fontSize: "0.68rem" }}>
+                    <div className="dica" style={{ fontSize: "0.7rem" }}>
                       desempate: {l.desempate}
                     </div>
                   )}
                 </td>
-                <td className="n" style={{ fontWeight: 700 }}>
-                  {l.pontos}
-                </td>
+                <td className="n pontos">{l.pontos}</td>
                 <td className="n">{l.jogos}</td>
-                <td className="n">{l.vitorias}</td>
-                <td className="n">{l.empates}</td>
-                <td className="n">{l.derrotas}</td>
-                <td className="n">{l.gols_pro}</td>
-                <td className="n">{l.gols_contra}</td>
+                <td className="n col-opc">{l.vitorias}</td>
+                <td className="n col-opc">{l.empates}</td>
+                <td className="n col-opc">{l.derrotas}</td>
+                <td className="n col-opc">{l.gols_pro}</td>
+                <td className="n col-opc">{l.gols_contra}</td>
                 <td className="n">{saldoBR(l.saldo)}</td>
-                <td className="n">{l.vermelhos || "—"}</td>
+                <td className="n col-opc">{l.vermelhos || "—"}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
     </div>
+  );
+}
+
+/** Uma legenda só, no fim da página — não repetida em cada regional. */
+function Legenda() {
+  return (
+    <Cartao>
+      <div className="legenda" style={{ borderTop: "none", marginTop: 0, paddingTop: 0 }}>
+        <div className="zonas">
+          <span className="zona ouro">
+            <i /> 1º e 2º · Final Ouro
+          </span>
+          <span className="zona prata">
+            <i /> 3º e 4º · Final Prata
+          </span>
+          <span className="zona bronze">
+            <i /> 5º e 6º · Final Bronze
+          </span>
+        </div>
+        <div className="abrev">
+          <strong>P</strong> pontos · <strong>J</strong> jogos ·{" "}
+          <strong>V</strong> vitórias · <strong>E</strong> empates ·{" "}
+          <strong>D</strong> derrotas · <strong>GP</strong> gols marcados ·{" "}
+          <strong>GC</strong> gols sofridos · <strong>SG</strong> saldo de gols ·{" "}
+          <strong>CV</strong> cartões vermelhos
+        </div>
+        <div className="abrev" style={{ marginTop: "0.5rem" }}>
+          Vitória vale 3 pontos e empate vale 1. Em caso de empate na
+          pontuação, decide nesta ordem: confronto direto, número de vitórias,
+          saldo de gols, cartões vermelhos e gols marcados.
+        </div>
+      </div>
+    </Cartao>
   );
 }

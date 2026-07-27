@@ -22,19 +22,15 @@ export function LimaBarreto() {
 
   return (
     <>
-      <Cartao titulo="Fase Lima Barreto">
-        <p className="dica" style={{ margin: 0 }}>
-          Art. 6º — cada série reúne as 6 equipes das Finais Ouro / Prata /
-          Bronze regionais: 3 campeãs e 3 vice-campeãs. As duas campeãs de
-          melhor campanha acumulada entram direto na semifinal; as outras
-          quatro fazem a repescagem.
-        </p>
-        <p className="dica">
-          O regulamento não define os critérios de <em>melhor campanha
-          acumulada</em>. A ordem sugerida abaixo usa a mesma lógica do Art. 9º
-          (pontos → vitórias → saldo → gols feitos), somando fase regional e
-          final regional. A Comissão Organizadora pode fixar outra ordem — e a
-          ordem fixada sempre prevalece.
+      <Cartao>
+        <div className="titulo-bloco">
+          <h2>Fase Lima Barreto</h2>
+          <div className="lugar">A fase final, entre as três regionais</div>
+        </div>
+        <p className="explica" style={{ marginBottom: 0 }}>
+          Cada série reúne 6 equipes: as 3 campeãs e as 3 vices das finais
+          regionais. As duas campeãs de melhor campanha vão direto à
+          semifinal; as outras quatro passam pela repescagem.
         </p>
       </Cartao>
 
@@ -137,6 +133,11 @@ function BlocoSerie({
 
       {isAdmin && (
         <div className="linha" style={{ marginTop: "0.7rem" }}>
+          <span className="dica" style={{ width: "100%" }}>
+            Ordem sugerida por pontos, vitórias, saldo e gols marcados
+            (regional + final). A Comissão pode fixar outra — a fixada
+            prevalece.
+          </span>
           {cls.manual ? (
             <>
               <span className="selo ok">ordem fixada pela Comissão</span>

@@ -12,12 +12,10 @@ export function Times() {
   return (
     <>
       <Cartao>
-        <p className="dica" style={{ margin: 0 }}>
-          Art. 13 — cada atleta só pode jogar por uma equipe; atleta em duas
-          equipes é eliminado e as partidas em que atuou irregularmente são
-          anuladas, com W.O. ao adversário (§§ 1º e 2º). A inscrição vai até um
-          dia antes de cada jogo e a lista <strong>fecha</strong> um dia antes
-          do jogo da 3ª rodada, valendo fechada para todo o resto da Copa (§ 3º).
+        <p className="explica" style={{ margin: 0 }}>
+          As 18 equipes da Copa e seus elencos inscritos. Cada atleta só pode
+          jogar por uma equipe, e a lista de inscritos fecha a partir da 3ª
+          rodada.
         </p>
       </Cartao>
 

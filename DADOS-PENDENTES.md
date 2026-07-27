@@ -40,13 +40,12 @@ jogos listados dele somam **5 pró e 0 contra**:
 ➡️ **Qual está certo: a tabela ou os placares? Falta algum jogo do
 Havana na lista?**
 
-### 2.3 TGFC (Guarulhos) — segue na competição?
+### 2.3 TGFC — ✅ confirmado que abandonou
 
-O TGFC perdeu os 5 jogos por 3×0 — que é exatamente o placar de W.O.
-do Art. 24 — e não aparece na classificação da regional.
-
-➡️ **O TGFC abandonou a competição? Os 5 jogos foram W.O. mesmo, ou
-algum foi disputado em campo?**
+Os 5 jogos entraram como W.O. 3×0 ao adversário (Art. 24) e o TGFC
+está marcado como fora da competição. **O que fazer com a vaga dele
+ainda não foi decidido** — ver o item 10, que é consequência direta
+disso.
 
 ---
 
@@ -78,10 +77,6 @@ por rodada?**
 - Proletariado Alviverde × Rayo Proletário
 - Só de Virada × Corote & Molotov
 - TAP × Código Verde
-
-*(A organização chamou essa rodada de "6ª". Num returno de 6 equipes são
-5 rodadas, então ela entrou no sistema como 5ª e última da fase
-regional. Se existe mesmo uma 6ª rodada, precisamos saber.)*
 
 ### Para todos os 16
 
@@ -166,14 +161,51 @@ concreto. O Art. 38 dá essa competência à Comissão.
 
 ---
 
-## 9. Conferência de nomes
+## 9. 🔴 A Final Bronze de Guarulhos não tem como acontecer
+
+**Consequência direta do abandono do TGFC. Precisa de decisão da
+Comissão.**
+
+A classificação de Guarulhos hoje é: 1º Família, 2º Havana, 3º
+Palestino, 4º Sevira FC, 5º Libertários, 6º TGFC.
+
+O Art. 6º manda cruzar 1º×2º na Final Ouro, 3º×4º na Prata e **5º×6º
+na Bronze**. A Final Bronze de Guarulhos seria, portanto,
+**Libertários × TGFC** — e o TGFC não existe mais na competição.
+
+O problema não para aí. A Série Bronze da Fase Lima Barreto é formada
+pelas 3 campeãs e 3 vices das Finais Bronze regionais. Sem a final de
+Guarulhos, essa série teria **4 equipes em vez de 6**, e o chaveamento
+do Art. 6º (que pressupõe 3 campeãs e 3 vices) não fecha.
+
+➡️ **O que a Comissão decide?** Algumas saídas possíveis, sem ordem de
+preferência:
+
+- Libertários leva o troféu Bronze de Guarulhos por W.O. e entra na
+  Lima Barreto como campeão, sem vice dessa regional;
+- Guarulhos não tem representante na Série Bronze, e a série roda com
+  4 equipes (chaveamento adaptado);
+- a Final Bronze de Guarulhos passa a ser 4º×5º, empurrando a Prata
+  para 2º×3º e a Ouro para 1º×2º — redistribuindo as 5 equipes
+  restantes;
+- outra solução que a Comissão entenda melhor.
+
+É caso omisso: o Art. 38 dá a decisão à Comissão Organizadora. Vale
+resolver **antes** do fim da fase regional — depois vira discussão
+sobre caso concreto, com um time já sabendo que se beneficia.
+
+O site avisa sobre isso na tela *Regionais* e não escolhe nada
+sozinho.
+
+---
+
+## 10. Conferência de nomes
 
 Como os nomes vão aparecer em tabela, súmula e troféu, vale confirmar a
 grafia oficial:
 
 - **Futantã** — aparece também como "Futanta" na lista de jogos
 - **Academia BNH** — aparece também só como "BNH"
-- **TGFC** — é sigla de quê? Qual o nome completo?
 - **Subúrbio Geral**, **Corote & Molotov**, **Rayo Proletário**,
   **Só de Virada**, **Código Verde**, **Sevira FC** — conferir
 
@@ -192,3 +224,5 @@ grafia oficial:
    critério de desempate.
 5. **A decisão da Comissão sobre "melhor campanha acumulada"** (item 8),
    antes das finais regionais.
+6. **O que fazer com a vaga do TGFC na Final Bronze de Guarulhos**
+   (item 9) — também antes do fim da fase regional.

@@ -31,12 +31,23 @@ export function Jogos() {
   return (
     <>
       <Cartao>
-        <div className="linha">
+        <div className="filtros">
           <label className="campo">
-            Situação
+            Meu time
+            <select value={timeId} onChange={(e) => setTimeId(e.target.value)}>
+              <option value="todos">Todos os times</option>
+              {times.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="campo">
+            Mostrar
             <select value={filtro} onChange={(e) => setFiltro(e.target.value as Filtro)}>
-              <option value="pendentes">A realizar</option>
-              <option value="realizados">Já realizados</option>
+              <option value="pendentes">Próximos jogos</option>
+              <option value="realizados">Jogos já disputados</option>
               <option value="todos">Todos</option>
             </select>
           </label>
@@ -51,27 +62,12 @@ export function Jogos() {
               ))}
             </select>
           </label>
-          <label className="campo" style={{ flex: 1, minWidth: "10rem" }}>
-            Time
-            <select value={timeId} onChange={(e) => setTimeId(e.target.value)}>
-              <option value="todos">Todos</option>
-              {times.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome}
-                </option>
-              ))}
-            </select>
-          </label>
           {isAdmin && (
-            <button className="espaco" onClick={() => setNovo((v) => !v)}>
-              {novo ? "cancelar" : "+ jogo avulso"}
+            <button onClick={() => setNovo((v) => !v)}>
+              {novo ? "cancelar" : "+ jogo"}
             </button>
           )}
         </div>
-        <p className="dica" style={{ marginBottom: 0, marginTop: "0.5rem" }}>
-          {lista.length} jogo{lista.length === 1 ? "" : "s"} · clique em{" "}
-          <em>editar</em> numa linha para lançar placar, W.O., data e campo.
-        </p>
       </Cartao>
 
       {novo && isAdmin && (
@@ -86,14 +82,16 @@ export function Jogos() {
 
       {grupos.length === 0 && (
         <Cartao>
-          <Vazio>Nenhum jogo com esses filtros.</Vazio>
+          <Vazio>
+            Nenhum jogo encontrado. Tente mudar o filtro acima.
+          </Vazio>
         </Cartao>
       )}
 
       {grupos.map((g) => (
         <Cartao key={g.chave} titulo={g.titulo}>
           {g.jogos.map((j) => (
-            <JogoLinha key={j.id} jogo={j} />
+            <JogoLinha key={j.id} jogo={j} semRodada />
           ))}
         </Cartao>
       ))}
