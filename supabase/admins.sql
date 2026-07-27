@@ -35,8 +35,34 @@ begin
 end $$;
 
 
--- ---------- 2. Demais admins ----------
--- Copie o bloco acima, troque v_email e v_nome, e rode de novo.
+-- ---------- 2. Rica Lourenço ----------
+-- Ajuste v_nome se a grafia correta for outra: esse campo é só o
+-- rótulo que aparece ao conferir a lista.
+do $$
+declare
+  v_email text := 'rica.lourenco.m@gmail.com';
+  v_nome  text := 'Rica Lourenço';
+  v_id    uuid;
+begin
+  select id into v_id from auth.users where lower(email) = lower(v_email);
+
+  if v_id is null then
+    raise exception
+      'A conta % ainda nao existe. Crie em Authentication -> Users -> Add user e rode este arquivo de novo.',
+      v_email;
+  end if;
+
+  insert into public.copa_admins (user_id, nome, email)
+  values (v_id, v_nome, v_email)
+  on conflict (user_id) do update
+    set nome = excluded.nome, email = excluded.email;
+
+  raise notice 'Admin liberado: % (%)', v_nome, v_email;
+end $$;
+
+
+-- ---------- 3. Demais admins ----------
+-- Copie um dos blocos acima, troque v_email e v_nome, e rode de novo.
 -- Um bloco por pessoa. Exemplo:
 --
 -- do $$
