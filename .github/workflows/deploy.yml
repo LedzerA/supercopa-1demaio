@@ -25,9 +25,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # O Pages foi habilitado uma vez, fora do workflow:
+      #   gh api -X POST repos/OWNER/REPO/pages -f build_type=workflow
+      # O GITHUB_TOKEN do Actions não tem permissão para criar o site
+      # (só para publicar nele), então `enablement: true` falha aqui.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
