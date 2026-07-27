@@ -1,0 +1,27 @@
+{
+  "name": "supercopa-admin",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "verificar": "esbuild scripts/verificar-tabela.ts --bundle --platform=node --format=esm --outfile=scripts/verificar-tabela.mjs --log-level=warning && node scripts/verificar-tabela.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
+  }
+}
